@@ -15,3 +15,4 @@ adopted over the SPODEs. COMP-AODE* achieves higher classification utility than 
 Compression-based AODE classifiers  
 Corani, G., Antonucci, A., De Rosa, R  
 Proc. 20th European Conference on Artificial Intelligence (ECAI 2012), pp. 264–269  
+http://ebooks.iospress.nl/publication/6983  
