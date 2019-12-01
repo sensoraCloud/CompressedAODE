@@ -1,0 +1,3 @@
+\begin{axis}[xlabel=Mean relative rank,width=7cm,height=4cm,ytick={1,2,3,4},yticklabels={NCC,DT,CMA,COMP-AODE*}]
+\addplot[mark=*,only marks,error bars/x dir=both, error bars/x fixed=0.300150]coordinates {(2.702703,1)(2.756757,2)(2.324324,3)(2.216216,4)};
+\end{axis}

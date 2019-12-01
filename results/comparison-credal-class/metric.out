@@ -1,0 +1,15 @@
+\BOOKMARK [1][-]{section.1}{1. Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{2. Classification problems}{}% 2
+\BOOKMARK [1][-]{section.3}{3. Introducing the betting framework}{}% 3
+\BOOKMARK [1][-]{section.4}{4. Betting with credal classifiers}{}% 4
+\BOOKMARK [1][-]{section.5}{5. Comparing credal classifiers}{}% 5
+\BOOKMARK [1][-]{section.6}{6. A digression: betting with money}{}% 6
+\BOOKMARK [1][-]{section.7}{7. The case for an objective winner}{}% 7
+\BOOKMARK [1][-]{section.8}{8. Comparison over the next m bets}{}% 8
+\BOOKMARK [2][-]{subsection.8.1}{8.1. Logarithmic Utility}{section.8}% 9
+\BOOKMARK [2][-]{subsection.8.2}{8.2. Exponential Utility}{section.8}% 10
+\BOOKMARK [1][-]{section.9}{9. Experiments}{}% 11
+\BOOKMARK [2][-]{subsection.9.1}{9.1. NBC versus NCC}{section.9}% 12
+\BOOKMARK [2][-]{subsection.9.2}{9.2. Experiments with credal classifiers}{section.9}% 13
+\BOOKMARK [2][-]{subsection.9.3}{9.3. Comparison with the non-deterministic classifier of Del Coz et al., 2009.}{section.9}% 14
+\BOOKMARK [2][-]{subsection.9.4}{9.4. Utility-discounted accuracy vs. rejection option}{section.9}% 15

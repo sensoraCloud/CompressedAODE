@@ -1,0 +1,1221 @@
+\documentclass[a4paper,10pt,reqno]{amsart}
+\usepackage{amsaddr}
+
+%\documentclass[preprint]{elsarticle}
+
+%\usepackage{pstricks}
+%\usepackage{epsfig}
+\usepackage{amssymb}
+\usepackage{amsmath,amsthm}
+\usepackage{enumerate}
+\usepackage{comment}
+
+%%%%%%%%%%%%%%
+% added
+%%%%%%%%%%%%%%
+\usepackage[british]{babel}
+\usepackage{mathtools}
+\usepackage{amssymb}
+
+\usepackage{comment}
+
+\usepackage{mathptmx}
+\usepackage{helvet}
+\usepackage{courier}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage[mathscr]{eucal}
+
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage{enumitem}
+\usepackage{nicefrac}
+
+\usepackage{multirow}
+
+\frenchspacing
+\usepackage{hyperref,url}
+  \hypersetup{  % bookmarks
+    bookmarksnumbered
+  }
+  \hypersetup{  % links
+    breaklinks=false,
+    pdfborderstyle={/S/U/W 0},  
+    citebordercolor=.235 .702 .443,
+    urlbordercolor=.255 .412 .882,
+    linkbordercolor=.804 .149 .149,
+  }
+  \hypersetup{ % metadata
+    pdfauthor={Marco Zaffalon \& Giorgio Corani \& Denis Mau\'a},
+    pdftitle={Evaluating credal classifiers by utility-discounted predictive accuracy},
+    pdfkeywords={}
+  }
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{definition}{Definition}
+\newtheorem{procedure}{Procedure}
+
+% Denis
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{subfigure}
+\input{macros}
+
+%Giorgio
+\usepackage{soul}
+\usepackage{colortbl}
+\usepackage{tikz}
+\usetikzlibrary{matrix}
+\usepackage{pgfplots}
+\usetikzlibrary{plotmarks}
+\pgfplotsset{
+tick label style={font=\small},
+label style={font=\small},
+legend style={font=\footnotesize}
+}
+\tikzset{every mark/.append style={scale=0.7}}
+
+\title[Evaluating credal classifiers]{Evaluating credal classifiers\\by utility-discounted predictive accuracy}
+\author{Marco Zaffalon, Giorgio Corani \and Denis Mau\'a}
+% \address{IDSIA, Galleria 2, CH-6928 Manno (Lugano), Switzerland}
+% \email{zaffalon@idsia.ch,giorgio@idsia.ch, denis@idsia.ch}
+%\author{Marco Zaffalon}
+%\address{IDSIA, Galleria 2, CH-6928 Manno (Lugano), Switzerland}
+\email{zaffalon@idsia.ch}
+%\author{Giorgio Corani}
+%\address{IDSIA, Galleria 2, CH-6928 Manno (Lugano), Switzerland}
+\email{giorgio@idsia.ch}
+%\author{Denis Mau\'a}
+\address{IDSIA, Galleria 1, CH-6928 Manno (Lugano), Switzerland}
+\email{denis@idsia.ch}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Predictions made by imprecise-probability models are often indeterminate (that is, set-valued). Measuring the quality of an indeterminate prediction by a single number is important to fairly compare different models, but a principled approach to this problem is currently missing. In this paper we derive, from a set of assumptions, a metric to evaluate the predictions of credal classifiers. These are supervised learning models that issue set-valued predictions. The metric turns out to be made of an objective component, and another that is related to the decision-maker's degree of risk aversion to the variability of predictions. We discuss when the measure can be rendered independent of such a degree, and provide insights as to how the comparison of classifiers based on the new measure changes with the number of predictions to be made. Finally, we make extensive empirical tests of credal, as well as precise, classifiers by using the new metric. This shows the practical usefulness of the metric, while yielding a first insightful and extensive comparison of credal classifiers.
+\end{abstract}
+
+\section{Introduction}
+
+When we use an imprecise-probability model to make predictions, we meet one of the most striking differences of imprecise probability in comparison to precise probability: the imprecise-probability model can issue \emph{indeterminate} predictions. That is, among the set of possible options, the model may drop some of them as sub-optimal, while keeping the entire remaining set as its prediction. The prediction is generally indeterminate as such a set is not necessarily a singleton. Indeterminate predictions are a crucially important feature of imprecise-probability models: they allow credible, and reliable, predictions to be obtained no matter how scarce is the information available to build a model.
+
+Yet, we should have a way to \emph{measure} how good is an indeterminate prediction. A major reason is that we need to compare imprecise- with precise-probability models: we should have a simple, and possibly shared way to say which one is better, in a given application. The same consideration applies when we compare two imprecise-probability models. Ideally, we would like to be able to reward each prediction by a single number, be it determinate or indeterminate . Most probably this would speed up progress in the field, as it would enable comparisons to be automatized over a large number of test applications.
+
+In the case of precise-probability models, there are well-consolidated measures to do this. Let us consider the field of \emph{pattern classification} \cite{duda2001}, which is the focus of this paper (Section~\ref{sec:theprob} gives a brief introduction to classification problems). In this case, the predictive models are called (precise) \emph{classifiers}. A classifier predicts one out of a finite set $\set{C}$ of so-called \emph{classes}. In this case, correct predictions may be rewarded with 1 and incorrect ones with 0, thus giving rise to the measure of performance called the \emph{predictive accuracy} of a classifier: i.e., the proportion of correct predictions it makes.
+
+The situation is very different with \emph{credal classifiers}, that is, classifiers that issue set-valued predictions. One of the few proposals to evaluate an indeterminate prediction by a single number can be found in \cite{corani2009b}: a prediction made of a set $\set{K}$ of $\numK$ classes is rewarded with $1/\numK$ if it contains the actual class, and with 0 otherwise. This gives rise to the measure called \emph{discounted accuracy}, which was borrowed from the field of multi-label classification \cite{tsoumakas2007rkl}.  The problem here is that no justification is given for discounted accuracy, as the work in \cite{corani2009b} points out. In \cite{JdalCozlearning}, classifiers which return indeterminate classifications are evaluated through the F-metric, originally designed for information retrieval problems; but also in this case, there is no actual justification for the choice of this measure. Other than these, the past proposals are either explicitly non-numerical, as the rank test in \cite{corani2009b}, or require a vector of parameters to evaluate the performance, as in \cite{corani2008a}. The latter approach is meaningful, but was conceived to compare credal with precise classifiers, and cannot be easily generalized to the more general case; moreover, it is a method that needs supervision so that it does not easily lend itself to be run automatically on many test cases.
+
+In our view, the scarcity of principled numerical evaluation methods for credal classifiers is not accidental: in fact, it is not easy to assign a single number to an indeterminate prediction. Consider the following case: there is a \emph{vacuous} classifier, which every time predicts the set of all classes $\set{C}$, and a \emph{random} one, which picks up a class from $\set{C}$ through the uniform distribution. If $\set{C}$ is made of two classes (we say that the classification problem is binary), and we use the predictive accuracy, the random classifier has an expected reward equal to $1/2$. What should be the expected reward of the vacuous classifier? Both classifiers do not know how to predict the class, but only the vacuous classifier declares it. From this, one might argue that the latter should be rewarded with more than $1/2$. On the other hand, it is clear also that the vacuous classifier cannot predict the class better than the random one, so that one might argue that it should be rewarded with $1/2$ too.
+
+In the attempt to address these kinds of problems in the most objective way, we found it useful to regard classifiers as bettors. In the betting framework introduced in Section~\ref{sec:betfram}, we assume we only know how to value determinate predictions, in particular by 0-1 rewards. In Section~\ref{sec:framext}, we extend the framework, in a kind of least-committal way, to credal classifiers: we show that, under reasonable assumptions, indeterminate predictions should be valued according to discounted accuracy. 
+
+Note, however, that discounted accuracy values the vacuous and the random classifiers the same. This kind of (questionable) effect can be traced back to having deliberately avoided introducing subjective considerations in the evaluation. Still, subjective preferences should be accounted for: we introduce in Section~\ref{sec:compare} a decision maker in charge of selecting the `best' classifier in the next bet, and show that preferences can enter the picture through his utility, as a function of discounted accuracy. This defines the measure we propose to evaluate credal classifiers: \emph{utility-discounted predictive accuracy}. More generally speaking, this shows in a very definite sense how the reliability of a classifier is tightly related to the variability of its predictions, and that the aversion to this variability is what makes some people prefer credal classifier to precise ones. In Section~\ref{sec:money} we briefly discuss how utility-discounted accuracy can equivalently, and quite naturally, be derived also in a framework based on money bets. This illustrates the tight relationship of our approach with finance.
+
+In Section~\ref{sec:objwin} we discuss an important case where the evaluation can still be made in quite an objective way despite the decision-maker's subjective preferences, and we relate this to the amount of indeterminacy produced by a credal classifier. In Section~\ref{sec:mbets} we analyze how the picture changes if we focus on evaluating classifiers in the next $m\ge1$ bets. We show that the difference between precise and credal classifiers decreases with growing $m$, so that the relative benefits of credal classification are less pronounced for large $m$.
+
+Sections~\ref{sec:expartif} is entirely devoted to the empirical evaluation of credal classifiers based on utility-discounted accuracy. We start by discussing the choice of sensible utility functions for our aim, that is, the fair comparison of credal classifiers. 
+
+In Section~\ref{sec:NBCvsNCC}, we focus the comparison on two classifiers representative of the precise and the credal classes: \emph{naive Bayes classifier} (NBC \cite{domingos1997}) and \emph{naive credal classifier} (NCC \cite{zaffalon1999a,zaffalon2001a,corani2008a}). We infer and test them both on artificial data and on 55 real data sets from the well-known UCI repository. This shows, as expected, that NCC yields particular advantages over NBC on small learning sets. In more general conditions, the situation is either slightly or decidedly in favor of NCC, depending on the preference of the decision maker toward reliability of classification. It is shown in particular that when the NCC is indeterminate, the NBC issues fragile predictions; this confirms past results in the literature.
+
+The comparison is extended in Section~\ref{sec:credalclass} to other credal classifiers, again on the UCI data sets. A thorough analysis highlights different characterists of the involved credal classifiers, and, at the same time, a substantial balance in their predictive performances (in particular when they are used jointly with feature selection to reduce overfitting). It is worth remarking that this kind of extensive and insightful comparison is made here for the first time, thanks to the availability of utility-discounted accuracy.
+
+Section~\ref{sec:coz} is devoted to a detailed comparison of NCC with a set-valued classifier developed within precise probability: the \emph{non-deterministic} classifier (NDC) of Coz et al. \cite{JdalCozlearning}. This comparison is interesting because the mentioned classifiers work according to very different principles, even though both yield set-valued classifications. Moreover, the discussion shows how the F-metric used in \cite{JdalCozlearning} for comparing classifiers, can be meaningfully re-interpreted as a utility function in our framework. This provided a justification for such a metric that was not available before. The comparison of NCC with NDC gives us the opportunity to consider a related question in Section~\ref{sec:rejopt}: the extent to which a fair comparison of classifiers is possible to do when some of them implement the so-called \emph{rejection option}: this is a precise-probability tool to issue set-valued classifications that relies on the inspection of the posterior probabilities assigned to the classes.
+
+After our concluding remarks in Section~\ref{sec:conc}, we provide the detailed numerical comparisons of classifiers, data set by data set, in Appendix~\ref{sec:app}.
+
+\section{Classification problems}\label{sec:theprob}
+
+A classification problem is made of objects described by \emph{attribute} (or \emph{feature}) variables, which we group into the single variable $A$, and a class variable $C$. The class variable represents the object's category. There are finitely many possible categories, which we identify with their indexes to simplify notation: $\{1,\dots,\numC\}=:\set{C}$. We denote by $c$ the generic element of $\set{C}$. The attribute variable represents some characteristics of the object that are related to the class. Variable $A$ takes values in the set $\set{A}$; we denote by $a$ its generic element. As an example, objects might be patients; $A$ would represent information about a patient, such as personal information as well as outcomes of medical tests; $\set{C}$ would index the patient's possible diseases. 
+
+Usually, some values of $(A,C)$ are sampled in an independent and identically distributed way according to a law that is not known a priori. The so-called \emph{learning set} $\set{L}$ records those values, which are also called \emph{instances} of $(A,C)$. The goal of classification is to learn from the learning set a function that maps attributes into classes. We call this function a (\emph{precise}) \emph{classifier}. 
+
+A classifier is applied to predict the class of new objects based on their attributes. Predictions are rewarded through a \emph{reward matrix} $\mathbb{R}$. This is an $\numC\times\numC$ matrix whose generic element $r_{ij}$ is a number representing the reward obtained by predicting class $i$ when the actual class is $j$. Equivalently, we can regard the reward matrix as a set of \emph{gambles} (i.e., bounded random variables) $\mathbb{R}_i$, $i=1,\dots,\numC$, each one corresponding to a row of $\mathbb{R}$: gamble $\mathbb{R}_i$ represents the uncertain reward obtained by predicting class $i$ and is defined by $\mathbb{R}_i(j)\coloneqq r_{ij}$, with $j\in\set{C}$. The reward matrix is an input of the classification problem, in the sense that it is given.
+
+In classification, at least with respect to the machine learning practice, rewards are usually measured in a linear utility scale: although this point is often left implicit, we can deduce it from the observation that the performance of a classifier is usually identified with its expected reward. 
+
+The most frequent practice consists also in using just a 0-1 valued reward matrix, which we denote by $\I$ (Table~\ref{tab:binary-rm} shows matrix $\I$ for the case of a binary classification problem).
+\begin{table}[htp]
+  \centering
+\begin{tabular}{cc|ccc}
+%\cline{3-4}
+& & \multicolumn{2}{c}{Actual class} \\ %\cline{3-4}
+& & $1$ & $2$ \\ \cline{1-4}
+\multicolumn{1}{c}{\multirow{2}{*}{Predicted class}} &
+\multicolumn{1}{c|}{$1$} & 1 & 0     \\ %\cline{3-4}
+\multicolumn{1}{c}{} &
+\multicolumn{1}{c|}{$2$} & 0 & 1\\ %\cline{3-4}
+\end{tabular}
+  \caption{0-1 reward matrix for a binary classification problem.}
+  \label{tab:binary-rm}
+\end{table}
+In this case, the gamble corresponding to the $i$-th row of the matrix coincides with the indicator function of set $\{i\}$, which yields $\I_i(i)=1$, and $\I_i(j)=0$ for $i\neq j$. Accordingly, the performance of a classifier corresponds to the probability of predicting the actual class. Such a probability is called the \emph{predictive accuracy} (or simply the \emph{accuracy}) of a classifier. 
+
+The term `accuracy' is used also for the sample estimate of such a probability. In fact, a classification problem usually comes with a test set $\set{T}$. This set contains a number of sampled instances of $(A,C)$ that are used to evaluate the classifier's predictive performance by measuring its accuracy on them. And in fact the predictive accuracy is by far the most frequently used empirical index to compare classifiers, even though a careful elicitation of rewards would arguably lead in many cases to a reward matrix more general than $\I$. Such a widespread use has probably been favored by the simple interpretation of predictive accuracy; a more substantial reason could be that the predictive accuracy is particularly convenient to make extensive comparisons of classifiers over many data sets, which is a key component of the machine learning practice. Accordingly, in this paper we focus on the 0-1 valued reward matrix $\I$.
+
+So far we have introduced the traditional view of classification, where the predictions issued by (precise) classifiers are made of single classes. This view has been generalized through the introduction of credal classifiers \cite{zaffalon1999a,zaffalon2002a}. A \emph{credal classifier} is also a function learned from set $\set{L}$, but it maps the attributes of an instance into a set $\set{K}\subseteq\set{C}$ of $\numK\coloneqq |\set{K}|$ classes in general. We call this a set-valued classification. We also say that the classification is \emph{determinate} when $\numK=1$, and \emph{indeterminate} otherwise. When a classification is fully indeterminate, that is, when $\set{K}=\set{C}$, we call it \emph{vacuous}. Similarly, the \emph{vacuous classifier} is the one that always issues vacuous predictions. To each credal classifier it is possible to associate a determinate classifier that outputs predictions by choosing every time a class uniformly at random\footnote{Throughout the paper we use the word `random' to mean \emph{uniformly} random.} from the output set $\set{K}$ of the credal classifier. We call this the $\set{K}$-\emph{random classifier}; when the related credal classifier is the vacuous one, we just call it the \emph{random classifier}.
+
+Evaluating a credal classifier can be regarded as the problem of defining an `extended' reward matrix, which associates a reward gamble to each non-empty subset of classes. For instance, suppose that one believes that the vacuous and the random classifiers should be evaluated equally in a binary classification problem characterized by matrix $\I$. The corresponding extended reward matrix is given in Table~\ref{tab:binary-erm}.
+\begin{table}[htp]
+  \centering
+\begin{tabular}{cc|ccc}
+%\cline{3-4}
+& & \multicolumn{2}{c}{Actual class} \\ %\cline{3-4}
+& & $1$ & $2$ \\ \cline{1-4}
+\multicolumn{1}{c}{\multirow{3}{*}{Predicted class}} &
+\multicolumn{1}{c|}{$1$} & 1 & 0     \\ %\cline{3-4}
+\multicolumn{1}{c}{} &
+\multicolumn{1}{c|}{$2$} & 0 & 1\\ %\cline{3-4}
+\multicolumn{1}{c}{}&{$\{1,2\}$} & 0.5 & 0.5
+\end{tabular}
+  \caption{An extended reward matrix for a binary classification problem featuring reward matrix $\I$. This specific extended reward matrix, which values the random and the vacuous classifiers the same, originates the metric called discounted accuracy in \cite{corani2009b} (see also Section~\ref{sec:framext}). Observe that in problems with more than two classes, there will obviously be more rows to fill with the appropriate rewards gambles.}
+  \label{tab:binary-erm}
+\end{table}
+
+%Credal classifiers deliver indeterminate classifications in the attempt to enhance the reliability of predictions. This is a sensible policy in many cases, any yet it gives rise to a central problem: how should credal classifiers be empirically evaluated? This paper is an attempt to provide a principled approach to the evaluation of credal classifiers.
+
+\section{Introducing the betting framework}\label{sec:betfram}
+
+In order to make the comparison of credal classifiers as objective as possible, we introduce the idea of a betting framework. We define the framework for a traditional problem of classification, where classifiers issue determinate predictions. In Section~\ref{sec:framext} we will extend the framework to credal classification.
+
+In the framework under consideration, we have two classifiers, which we would like to compare, that have already been inferred from data (so that there is no further learning, only an evaluation stage). These classifiers are regarded as bettors. Bets correspond to instances of the problem of classification:  a bet is set up by sampling an instance of the problem. Classifiers are required to bet by predicting the actual class of the instance, and are rewarded according to matrix $\I$. The process is repeated for ever, and the performance of classifiers is taken to be their predictive accuracy. 
+
+Let us make the betting framework more precise by describing the two types of actors that play a role there:
+\begin{description}[font=\normalfont,style=sameline,leftmargin=0.5cm]
+\item[Bettors] each of the two classifier we aim at comparing is regarded as a bettor.
+\item[House] rewards are delivered to bettors by an artificial entity that we call House. House only accepts determinate bets, which are rewarded according to matrix $\I$.
+\end{description}
+
+These actors are characterized by clarifying their relationship with the rewards, that is, with the utility scale involved. To start with, based on the discussion made in Section~\ref{sec:theprob}, we can readily state our first assumption concerning the betting framework:
+\begin{enumerate}[font=\normalfont,label=(A1)]
+\item\label{hp:A1} Utility of bettors is linear in the rewards. 
+\end{enumerate}
+This assumption simply states explicitly what is current practice in classification.
+
+The second assumption concerns House. We want to model House as an agent whose only aim is to reward correct predictions. In other words, House should not introduce any subjective bias in the process of rewarding bettors because of a risk-averse or risk-seeking attitude; it should just be risk neutral:
+\begin{enumerate}[font=\normalfont,label=(A2)]
+\item\label{hp:A2} Utility of House is linear in the rewards.
+\end{enumerate}
+
+\section{Betting with credal classifiers}\label{sec:framext}
+
+Now we would like to extend the betting framework to credal classifiers. The crucial point here is that House only accepts determinate bets, while a credal classifier outputs set-valued classifications in general. Therefore, if we want to allow a credal classifier to play, we should find a way to extend the reward matrix to set-valued classifications in a way that both House and bettor find acceptable. 
+
+The first step in this direction is to recognize that any negotiation between the credal classifier and House can be made only on the basis of determinate bets, which is the only language that House understands. In order to enable the credal classifier to play as a determinate bettor, we state the following assumption:
+\begin{enumerate}[font=\normalfont,label=(A3)]
+\item\label{hp:A3} The credal bettor accepts betting on any single class from its set-valued prediction, if forced to make a determinate bet, and on no class outside that set.
+\end{enumerate}
+This assumption is typically satisfied when the classes in the output set of the credal classifier are incomparable, and the other ones represent dominated options. This is the case when credal classifiers are obtained using sets of probabilities and decision criteria like maximality or e-admissibility (see, e.g., \cite[Section~3.9]{walley1991}). We state the assumption explicitly in order to allow the framework to be used also by credal classifiers created in a different way.
+
+The next assumption formalizes the idea that the framework is run for ever:
+\begin{enumerate}[font=\normalfont,label=(A4)]
+\item\label{hp:A4} Every possible bet is repeated infinitely many times in the betting framework by sampling the problem instances.
+\end{enumerate}
+This assumption, together with the previous one, enable the credal classifier to actually adopt a randomized strategy over the $\numK$ classes in its output set $\set{K}$. A randomized strategy is a mass function $\sigma\coloneqq(\sigma_i)_{i\in\set{K}}$ that represents the (determinate) betting behavior of the credal classifier in the limit. 
+
+At this point House knows that the credal classifier has the freedom to implement any randomized betting strategy: this means that the credal classifier can actually force House to undergo any expected loss that can follow from the choice of the strategy.
+
+Let us call a prediction $\set{K}$ `successful' if the actual class belongs to $\set{K}$. We restrict the attention to successful predictions as they determine House's expected loss: in fact, an unsuccessful prediction always yields a zero loss, by definition of $\I$, irrespective of the randomized strategy adopted. Let $\theta\coloneqq(\theta_j)_{j\in\set{C}}$ be the vector of chances, that is, the population proportions, for the classes conditional on the prediction being successful (this means that $\theta_j=0$ if $j\notin\set{K}$). House's expected loss conditional on a successful predictions equals $$\sum_{i\in\set{K}}\sum_{j\in\set{C}}\I_i(j)\sigma_i\theta_j=\sum_{i\in\set{K}}\sigma_i\theta_i,$$ where we are assuming that the strategy is chosen independently of the chances.
+
+The loss depends on $\sigma$, which is chosen by bettor, and on $\theta$. The latter models the specific problem under consideration. But House knows that the betting system will be applied, in principle, to every possible problem. House should then be enabled to consider every possible scenario: 
+\begin{enumerate}[font=\normalfont,label=(A5)]
+\item\label{hp:A5} In the determination of the expected loss, House has the freedom to choose any value for $\theta$.
+\end{enumerate}
+At this point we are ready to derive the extended reward matrix (as described at the end of Section~\ref{sec:theprob}, and in particular given in Table~\ref{tab:binary-erm} for the case of binary classification):
+\begin{theorem}\label{thm:1} Let $\set{K}\subseteq\set{C}$ be a set-valued prediction made of $\numK$ classes, $\I_{\set{K}}$ be the indicator function of set $\set{K}$, and $j$ the actual class. The corresponding value in the extended reward matrix that is uniquely consistent with~\ref{hp:A1}--\ref{hp:A5} is the discounted accuracy:
+\begin{equation}
+\frac{\I_{\set{K}}(j)}{\numK}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+If $\set{K}$ is unsuccessful, then any randomized strategy will yield a zero loss.
+Let us focus on successful predictions. Let $\Delta$ be the $\numC-1$ probability simplex. We formulate the problem in a game-theoretic setting. The two players are just bettor and House. Bettor can choose $\sigma\in\Delta$, while House can choose $\theta\in\Delta$. What we get is a zero-sum game with a gain for bettor defined by $\sum_{i\in\set{K}}\sigma_i\theta_i$. This is a continuous linear function in $\sigma$ for all $\theta\in\Delta$, as well as in $\theta$ for all $\sigma\in\Delta$, and moreover $\Delta$ is a compact convex set. The minimax theorem (see, e.g., \cite[Theorem~6.7.3]{stoer1970}) allows us to deduce that there is an optimal solution to the game with expected reward equal to $\max_{\sigma\in\Delta}\min_{\theta\in\Delta}\sum_{i\in\set{K}}\sigma_i\theta_i$. It is easy to see that that is equal to $1/\numK$: once a strategy $\sigma$ is fixed, the minimum is achieved by setting $\theta_{i_*}\coloneqq 1$ on any $i_*=\argmin_{i\in\set{K}}\sigma_i$; then the problem becomes $\max_{\sigma\in\Delta}\min_{i\in\set{K}}\sigma_i=1/\numK$. The related optimal strategy $\sigma^*$ is uniform, $\sigma_i^*\coloneqq 1/\numK$ for all $i\in\set{K}$; this means that bettor and House agree that credal bettor should act like the $\set{K}$-random classifier.
+
+Now remember that, according to~\ref{hp:A1}--\ref{hp:A2}, both bettor and House are risk neutral. This means they agree that an unsuccessful prediction is rewarded by the certain value $0$ and a successful one by the certain value $1/\numK$. This is achieved by setting the reward equal to the discounted accuracy. 
+\end{proof}
+
+
+It is useful to comment on this result from a few different viewpoints. 
+
+One thing is that the discounted accuracy implements a kind of least-committal reward system for House, in the sense that House gives bettor only what is certainly due to it. In fact, if the credal bettor does implement strategy $\sigma^*$, the expected reward that it achieves is indeed $1/\numK$, irrespective of the chances. Therefore the established reward is what House knows already that bettor can make for sure. For the same reason, it would be implausible to expect that credal bettor accepts any smaller reward. It is also interesting to observe that playing as the $\set{K}$-random bettor (i.e., classifier) is the only way for credal bettor to have a sure reward.
+
+The next consideration is again based on the observation that credal bettor is evaluated exactly as the $\set{K}$-random bettor. This has important implications for the comparison of classifiers through the discounted accuracy: the main point is that the $\set{K}$-random bettor is actually taken as a baseline to compare classifiers. Consider, for the sake of explanation, a determinate classifier whose output class is always contained in that of a certain credal classifier. The determinate classifier will be evaluated better than the credal classifier as soon as it exploits, to any (even a very tiny) degree, the credal classifier's set of output classes better than the $\set{K}$-random one. Looking at this from another side, it means that the credal classifier can be better than the determinate one only if the latter behaves worse than the $\set{K}$-random classifier! (Surprisingly, this does not happen as rarely as one could imagine; see Section~\ref{sec:nbcvsncc} for details.) This discussion should make clear that the discounted accuracy, although it is a reasonable criterion, is probably the most unfavorable way (among the reasonable ones) to evaluate credal classifiers, as a credal classifier cannot do better than isolating a set of classes that is impossible to compare.
+
+This points to an aspect of the evaluation that the discounted accuracy certainly fails to capture. Let us focus on the simplest possible setup, using the following example. You are trying to evaluate two physicians based on some recorded diagnostic performance of theirs. In your records, the first physician always issues a vacuous diagnosis, that is, the entire set $\set{C}$ of possible diseases. The second always issues a determinate diagnosis. But when you measure the second physician's predictive accuracy, you realize that his predictions are random. In this case, the discounted accuracy values the two physicians the same: $1/\numC$. But it is clear that the first physician provides you with something more than the second, because, in a sense, he delivers what he promises. How to precisely value this `something more' appears to be quite a subjective matter. In this sense, it should not be too surprising that discounted accuracy does not value it at all, as it has been created trying to keep subjectivity out of consideration. And yet, subjectivity matters, and should be taken into account. The next section shows that this can be done in a very natural way.
+
+\section{Comparing credal classifiers}\label{sec:compare}
+
+We have two classifiers $f,g$. We focus on selecting the classifier whose expected performance in the next instance (i.e., next bet) is greater than the other's. In the previous section we have measured performance by discounted accuracy. In this section, we want to make the method of comparison more flexible by allowing subjectivity to enter the picture, so as to be able to deal with the issues discussed at the end of the previous section. To this end, we start identifying classifiers with gambles: let gambles $f$ and $g$ yield the discounted-accuracy reward achieved by classifiers $f$ and $g$, respectively, in the next instance. There is uncertainty about these gambles because we assume that the instance has yet to be sampled.
+
+The comparison of gambles $f$ and $g$ needs a (rational) decision maker, whom we call `you'. By definition of the gambles, you will compare them based on discounted-accuracy rewards. We model your attitude towards these rewards through the following assumption:
+\begin{enumerate}[font=\normalfont,label=(A6)]
+\item\label{hp:A6} Your utility,\footnote{We assume that the usual regularity conditions for utility hold, and in particular that it is strictly increasing, and that it has first and second derivatives (see, e.g., \cite{luenberger1998}).} as a function $u(\cdot)$ of the discounted-accuracy rewards, is concave,
+\end{enumerate}
+which means that you are risk averse, or at most neutral, in these rewards.\footnote{Note that House is not affected by your entering the picture, as it keeps on delivering discounted accuracy rewards as before. What changes is the explicit introduction of a decision maker and his perception of the value of these rewards, as modeled by your risk aversion.}
+
+This seems to be quite a reasonable assumption in the common setup where the original rewards (the ones used to define the 0-1 reward matrix $\I$) are measured in a utility scale that is linear for you. To see this, imagine that you are directly asked to extend the original reward matrix $\I$ to take into account your attitude towards set-valued classifications. Can we say something about the values you would use to define such an extended matrix? On the one hand, we argue that the rewards you would put there should be greater than or equal to the discounted-accuracy rewards. This follows from the discussion at the end of Section~\ref{sec:framext}, which shows that it would be unreasonable to use values smaller than the discounted accuracy. On the other hand, values strictly greater than that would be reasonable: these allow you to express a preference in favor of a set-valued classification in comparison to the related $\set{K}$-random prediction. 
+
+Remember that your utility is linear in the original 0-1 rewards, whence we can assume without loss of generality that for you it holds that $u(0)=0$ and $u(1)=1$. In addition, the previous argumentation makes it clear that for a set-valued prediction $\set{K}$ containing the actual class, it should only be possible that $$u(1/k)\ge1/k.$$ In other words, your utility function turns out to be, in general, a non-linear function of the discounted accuracy rewards. Saying this differently, we can equivalently regard discounted accuracy as representing a new utility scale in which your utility function is non-linear. In Assumption~\ref{hp:A6} we take your utility in particular to be concave to express a consistent preference for set-valued classifications in comparison to the related $\set{K}$-random predictions (note that this includes the extreme case of a linear utility function, in which the two options are equally valued).
+
+Going back to the comparison of classifiers, it follows immediately from~\ref{hp:A6} and decision-theoretic arguments that you will choose the one with maximum expected utility: $h^*\coloneqq \argmax_{h\in\{f,g\}}E[u(h)]$. 
+
+Re-consider the example of the vacuous and the random classifier, discussed at the end of Section~\ref{sec:framext}, as they are emblematic of the differences that arise in the evaluation of credal and precise classifiers when using utility. %They have the same expected reward $1/\numC$, but they do have very different variance: in fact, the vacuous classifier earns $1/\numC$ constantly under the discounted accuracy, so that \emph{its variance is zero}. In other words, the `something more' that the vacuous classifier is providing is its inherent reliability in earning rewards, which, using discounted accuracy, has a very clear numerical counterpart in its variance. The value that you give to this is indeed personal, and is formalized through your utility function. In the extreme case when you are risk neutral in the discounted-accuracy rewards, the value is zero, and in this case there seems to be little room for credal classifiers in your interests. Bigger values express stronger preferences for reliable predictions.
+\begin{proposition}\label{pr:r-v} The random and the vacuous classifiers have the same expected reward on the next instance, but the expected utility of the vacuous is greater under any strictly concave utility function.
+\end {proposition}
+\begin{proof}
+  Denote the random classifier by $r$, and the vacuous classifier by $v$. As usual, we identify the classifiers with the corresponding gambles, which represent uncertain discounted-accuracy rewards for the next bet.
+  The vacuous classifier gets on any
+  instance the deterministic reward $1/\numC$. Thus, under
+  any utility function:
+\begin{equation*}
+E[u(v)]=u\left(\frac{1}{\numC}\right)=u(E[v]) \, .
+\end{equation*}
+The random classifier $r$ samples the predicted class from $\set{C}$ according to the uniform mass function $\sigma^*$, independently of the actual class. Let us denote, as usual, by $\theta=(\theta_j)_{j\in\set{C}}$ the vector of chances for the actual classes. We obtain that 
+\begin{equation*}
+  E[r]=\sum_{i\in\set{C}}\sum_{j\in\set{C}}\I_i(j)\sigma_i^*\theta_j=\sum_{i\in\set{C}}\sigma_i^*\theta_i=1/n \, .
+\end{equation*}
+This shows that $E[v]=E[r]$. In addition, using Jensen's inequality leads to
+\begin{equation*}
+E[u(r)]<u(E[r])=u\left(1/\numC\right)=E[u(v)] \, ,\label{eq:util-random}
+\end{equation*}
+whenever $u$ is a strictly concave function.
+\end{proof}
+
+To better analyze this point, it is useful to approximate the expected utility  by a second-order Taylor series. Let $h$ be a generic classifier (and hence, a gamble):
+\begin{gather}
+E[u(h)] \simeq u(E[h])+\overbrace{u'(E[h])E(h-E[h])}^{=0}+\nonumber\\
++\frac{1}{2}
+u''(E[h]) E\left[\left(E[h]-h\right)^{2}\right]=\nonumber\\
+= u(E[h])+\frac{1}{2}u''(E[h])Var[h] \, ,\label{eq:second_order_appr}
+\end{gather}
+where $u',u''$ are the first and second derivative of the utility function, and $Var[h]$ denotes the variance of $h$. Well-known papers in finance \cite {hlawitschka1994empirical,levy1979approximating} have shown that this is a very accurate approximation.
+
+Remember that $u''(E[h])\le0$ for every concave utility function (moreover, $u''(\cdot)$ is related to the degree of risk aversion of the utility assessor). Therefore what Equation~\eqref{eq:second_order_appr} tells us is that the expected utility increases by increasing the expectation of rewards and decreasing their variance.  It is clear now why the vacuous classifier, with variance equal to zero, is preferred to the random one. In other words, the `something more' that the vacuous classifier is providing is its inherent reliability in earning rewards, which, using discounted accuracy, has a very clear numerical counterpart in its variance. The value that you give to this is indeed personal, and is formalized through your utility function. In the extreme case when you are risk neutral in the discounted-accuracy rewards, the value is zero, and in this case there seems to be little room for credal classifiers in your interests. Bigger values express stronger preferences for reliable predictions.
+
+All the above considerations can be turned into a remarkably simple procedure to empirically compare credal classifiers in practice. Remember that in a classification problem we usually have a test set $\set{T}$, that is, a collection of instances used to evaluate the performance of a classifier. We need to estimate $E[u(h)]$ for a certain classifier $h$. Let us denote by $\set{U}$ the set of values that gamble $u(h)$ can take. Set $\set{U}$ has $(2^{\numC}-1)\times\numC$ elements at most, as the values are in one-to-one correspondence with the elements of the reward matrix extended through discounted accuracy (as in Table~\ref{tab:binary-erm}). If we estimate the chance of a value $u_h\in\set{U}$ by its sample proportion $\#(u_h)/|\set{T}|$ in the test set, we obtain:
+\begin{equation*}
+E[u(h)]\simeq\sum_{u_h\in\set{U}}u_h\frac{\#(u_h)}{|\set{T}|}=\frac{1}{|\set{T}|}\sum_{(a,c)\in\set{T}}u(h(a,c)).
+\end{equation*}
+This is equivalent to evaluating the performance of a credal classifier using the $(2^{\numC}-1)\times\numC$ reward matrix obtained by applying function $u(\cdot)$ point-wise to the matrix extended through discounted accuracy. As an example, the extended reward matrix in Table~\ref{tab:binary-erm} should be transformed into that in Table~\ref{tab:binary-u(erm)}.
+\begin{table}[htp]
+  \centering
+\begin{tabular}{cc|ccc}
+%\cline{3-4}
+& & \multicolumn{2}{c}{Actual class} \\ %\cline{3-4}
+& & $1$ & $2$ \\ \cline{1-4}
+\multicolumn{1}{c}{\multirow{3}{*}{Predicted class}} &
+\multicolumn{1}{c|}{$1$} & u(1) & u(0)     \\ %\cline{3-4}
+\multicolumn{1}{c}{} &
+\multicolumn{1}{c|}{$2$} & u(0) & u(1)\\ %\cline{3-4}
+\multicolumn{1}{c}{}&{$\{1,2\}$} & u(0.5) & u(0.5)
+\end{tabular}
+  \caption{The extended reward matrix in Table~\ref{tab:binary-erm} modified through your utility of discounted accuracy.}
+  \label{tab:binary-u(erm)}
+\end{table}
+In other words, what is done in practice is to change the `discounting' factor in the discounted accuracy by means of the concave utility function. For this reason, we call the resulting metric `utility-discounted (predictive) accuracy'.
+
+As a side remark, consider that the performance index obtained through the application of utility to the extended reward matrix need not be in the range $[0,1]$ in general; in this case it cannot be interpreted as an accuracy index. To bring the measure back to a predictive accuracy index (although one that is distorted through the utility function), the above comparison can be made, more conveniently, using $u^{-1}(E[u(h)])$ (that is, by the so-called \emph{certainty equivalent}). 
+
+\section{A digression: betting with money}\label{sec:money}
+Before moving on to more technical questions, it is useful to look back one more time at the utility-discounted accuracy we are proposing. We do this by briefly overviewing an alternative interpretation of the metric that offers a different viewpoint.
+
+We started the discussion in Section~\ref{sec:theprob} assuming that the rewards are measured in a utility scale that is linear for you. We did so because this appears to be the standard assumption done in classification (even though it is often left implicit). On the other hand, the development of utility-discounted accuracy can be made simpler by assuming that the rewards are given using money. This means assuming that a successful determinate prediction earns you $1$ unit of a given currency (such as dollars), and that you earn nothing otherwise.
+
+Using money simplifies the treatment because it allows us to focus only on House. House is, as before, an artificial entity that delivers rewards---this time using money---. House's aim is only to reward correct rewards, and for this reason Assumption~\ref{hp:A2} still holds. Initially House sets the rewards for the determinate bets, thus making up matrix $\I$. Then House wants to allow for set-valued bets, and wonders how to associate a reward to them in a fair way. The discussion in Section~\ref{sec:framext} can be re-phrased to this end so as to show that the discounted accuracy implements the fair way to reward bettors that House is looking for: in fact, from House's viewpoint, it would be unfair to reward a bettor with less than the discounted accuracy, because the bettor could obtain the same average amount of money in the limit by playing as the $\set{K}$-random bettor; on the other hand, delivering more than the discounted accuracy would give an unfair advantage to the bettor, because there is no way for him to surely make a gain bigger than the discounted accuracy in general.
+
+By doing so, House fixes the rewards for any type of bet, determinate and indeterminate. At this point, you want to bet with House. Remember that House gives rewards in money. It is a widely accepted assumption that people are risk averse in money rewards. This means that your utility, as a function of money, is concave; whence Assumption~\ref{hp:A6}, properly re-phrased for the present setup, holds. The rest of the discussion in Section~\ref{sec:compare} holds here as well.
+
+In other words, in the money-based framework, utility-discounted accuracy follows from two quite natural requirements: setting up a fair way to reward set-valued predictions on the basis of the rewards of determinate ones; and taking into consideration that you are risk averse in money rewards. Apart from the inherent simplicity of the money-based setup, it is remarkable that such a setup makes it immediate clear that there is a large overlap between the evaluation of credal classifiers and finance. In this light, it is not surprsing that a well-known formula in finance, such as~\eqref{eq:second_order_appr}, holds also in the present setup. In finance, such a formula states that an investor usually wants to decrease the risk of an uncertain gain besides increasing the gain itself. With credal classifiers, such a formula states that one might want to go for weaker predictions in order to increase their reliability. Underlying both views is the idea that there is a value in reducing variability: using indeterminate predictions seems to be a privileged way to do so in classification. Saying this differently: if classifiers' predictions really led to money rewards, probably more people would consider using credal classifiers, in the same way as in finance it is unlikely to find investors that buy stocks disregarding their variability.
+
+We end up the discussion about money rewards here; in the next sections we take up again the main thread of the discussion, concerned in particular with rewards expressed in a utility scale that is linear for you. This notwithstanding, it is useful to keep in mind that also the next developments can be re-casted in terms of money-based rewards.
+
+% \section{Experimental Analysis}
+% 
+% *** Make (extensive) tests also to choose the specific utility function? ***\\
+% *** Which measure do we finally propose? ***\\
+% *** Extensive tests with that. ***\\
+% *** Specific comparison of our CCs with other people's (like those in Oviedo, but also Serafin's tree, but also other people who have proposed non-deterministic classifiers; we should do careful comments here). ***
+
+\section{The case for an objective winner}\label{sec:objwin}
+
+Equation~\eqref{eq:second_order_appr} is useful because it gives us a very accurate approximation to the expected utility while releasing us from having our considerations narrowed down by the specific form of the utility function considered. To this end, in the following, we will repeatedly refer to~\eqref{eq:second_order_appr} as if it were our actual expected utility.
+
+In particular, an interesting consideration suggested by Equation~\eqref{eq:second_order_appr} is that in one case the comparison of classifiers can be done by minimizing subjective considerations: when the two classifiers have equal expected reward. In this case, the classifier with minimum variance wins under every strictly concave utility function: that is, no matter how tiny (but non-zero) is your degree of risk aversion. This can be implemented in practice by defining a range where the difference of the expected rewards is deemed irrelevant, and estimating their variances from the test set.
+
+In the following, we investigate whether we can relate the variance of a classifier with its \emph{determinacy}, that is, with a measure of the amount of imprecision in the output. Intuitively, we expect such a relationship to exist because both measures are related to the reliability of a classifier, and moreover, we expect that larger indeterminacy corresponds to smaller variance.
+
+The gamble $h$ corresponding to a classifier's performance in the next bet can be decomposed in two other gambles $h_D$ and $h_I$ such that $h=h_D+h_I$ and $h_Dh_I=0$ (element-wise). Intuitively, $h_D$ and $h_I$ represent the rewards for
+$h$ when it returns, respectively, a determinate and an
+indeterminate classification. The following relationships
+follow from the decomposition under discounted accuracy:
+ \begin{equation*}
+   E[h^2] = E[h_D^2]+E[h_I^2], E[h_D^2] = E[h_D], E[h_I] \geq E[h_I^2],%\label{eq:fisquare}%
+ \end{equation*}
+where in the last expression we have the equality only if
+ $E[h_I]=E[h_I^2]=0$, which implies that either $h$ is a precise
+ classifier or that indeterminate predictions of $h$ contain the
+actual class with probability zero.
+
+ Let $f$ and $g$ denote two generic classifiers with the same expected discounted accuracy: $E[f]=E[g]$. Using the identities above, one
+ can show that the difference of variances is
+ thus
+\begin{equation} %\notag
+  \Delta Var \coloneqq  Var[g] - Var[f]
+  % \notag
+  % & = E[R_g^2] - E^2[R_g] - E[R_f^2] + E^2[R_f]\\ \notag
+  % & = E[R_g^2] - E[R_f^2]\\ \notag
+  % & = E[D_g^2] + E[I_g^2] - E[D_f^2] - E[I_f^2]\\
+  = E[g_D] + E[g_I^2] - E[f_D] - E[f_I^2].  \label{eq:deltavar}
+\end{equation}
+
+Let us start by considering the important case where we compare a credal classifier with a precise one:
+\begin{proposition}
+  Consider a credal classifier and a precise classifier with the same expected reward. Then the credal classifier is preferable to the precise classifier under any strictly concave utility function.
+\end{proposition}
+
+\begin{proof}
+  Let us denote by $f$ the credal classifier and by $g$ the precise
+  one. We know by Equation~\eqref{eq:second_order_appr} that we prefer the classifier with smaller variance under any strictly concave utility function. Thus, it suffices to show that $\Delta Var \geq
+  0$. Since $E[f_I^2] \leq E[f_I]$, it follows from Equation~\eqref{eq:deltavar} that  $\Delta Var = E[g_D] - E[f_D] - E[f_I^2]$ so that\begin{equation*}
+  \Delta Var \geq E[g_D] - E[f_D] - E[f_I] = E[g] - E[f], \end{equation*} which equals zero, since $f$ and $g$ have equal expected reward. Note the inequality is strict (i.e., there is strict preference) if the credal classifier is not always determinate and its indeterminate predictions are successful with positive probability.
+  \end{proof}
+ 
+Now, let $H_D$ be the event that equals 1 when the generic classifier $h$ is determinate on the next instance, and 0 otherwise. We define the \emph{determinacy} of classifier $h$ as the probability that $h$ is determinate: $P(H_D)$. This definition allows us to settle the problem for the next case:
+\begin{proposition}
+Consider two credal classifiers that are vacuous whenever
+they are indeterminate and that have the same expected reward. Then the more indeterminate classifier is preferable under any
+strictly concave utility function.
+\end{proposition}
+
+\begin{proof}
+  Let us denote by $f$ and $g$ the two credal classifiers, assuming
+  $f$ to be more indeterminate than $g$: $P(G_D)>P(F_D)$. It suffices to show
+  that $\Delta Var > 0$. Any generic classifier $h$ that is vacuous whenever it is indeterminate is rewarded with $1/\numC$ for any indeterminate prediction. Hence,
+ \begin{subequations}
+   \begin{align*}
+     E[h_I] & = \frac{1-P(H_D)}{\numC},E[h_I^2] = \frac{E[h_I]}{\numC} \, .
+  \end{align*}
+\end{subequations}
+From these identities and Equation~\eqref{eq:deltavar} we have that
+\begin{subequations}
+\begin{align*}
+  \Delta Var & = E[g_D] + E[g_I]/{\numC} - E[f_D] -
+  E[f_I]/\numC\\
+%  & = E[R_g] - E[I_g] + E[I_g]/{\numC} - E[R_f] + E[I_f] - E[I_f]/{\numC}\\
+  & = - E[g_I] + E[g_I]/{\numC} + E[f_I] - E[f_I]/{\numC}\\
+  & = \frac{{\numC}-1}{\numC} \left (-E[g_I] + E[f_I] \right ) = \frac{{\numC}-1}{{\numC}^2} \left (P(G_D) - P(F_D) \right )
+  \, ,
+\end{align*}
+\end{subequations}
+which is strictly positive by the initial assumptions.
+\end{proof}
+%
+This proposition is particularly useful as it allows us to solve the problem in the case of binary classification problems,
+where any indeterminate prediction is necessarily vacuous.
+
+One might be tempted to think that the previous result extends to non-vacuous classifiers as well, that is, the more determinate a classifier the higher its variance (and therefore the less preferable it is). Unfortunately, this is not the case, as the following example shows.
+
+ \begin{example}
+   Consider a three-class classification problem. Let
+   $H_k$ denote the event that equals 1 if the generic classifier $h$
+   returns a set of $k$ classes that contains the actual one, and
+   0 otherwise. Likewise, let $H_k^c$ be the event that equals 1 if
+   $h$ outputs $k$ incorrect classes, and 0 otherwise. Note that
+   $\sum_{k=1}^{3} H_k + H_k^c=1$ and $H_{3}^c = 0$. We can define the
+   relevant expectations in terms of $H_k,H_k^c$:
+ \begin{align*}
+   P(D_h) &= P(H_1) + P(H_1^c), &
+  E[h] &= \sum_{k=1}^{3} \frac{1}{k} P(H_k),\\
+  E[h^2] &= \sum_{k=1}^{3} \frac{1}{k^2} P(H_k), &
+  1 &= \sum_{k=1}^{3} P(H_k) + P(H_k^c)  \, .
+ \end{align*}
+ Assume that $P(F_1)=P(G_1)+\epsilon$, $P(G_1^c)=P(F_1^c)+2\epsilon$,
+ $P(G_2)=P(F_2)+2\epsilon$, $P(F_2^c)=P(G_2^c)+3\epsilon$, and
+ $P(F_3)=P(G_3)$, for some small $\epsilon>0$. Then we have from the identities above that
+ $E[f] = E[g]$.  Similarly, we have that $E[f^2] = E[g^2] + \frac{\epsilon}{2}$. Hence, $\Delta Var = E[g^2] - E[f^2] < 0$, and $g$ is preferred over $f$ even though $g$ is more determinate than $f$: $P(D_f) = P(D_g) -\epsilon$.
+
+ Alternatively, we might measure the indeterminacy of a classifier $h$ by
+ the expected number of classes it outputs:
+$\sum_{k=1}^{\numC} k \left [ P(H_k) + P(H_k^c) \right ]$. Thus, in the example, we would have
+\begin{align*}
+  \sum_{k=1}^{\numC} k \left [ P(F_k) + P(F_k^c) \right ] = \sum_{k=1}^{\numC} k \left [ P(G_k) + P(G_k^c) \right ]  + 4\epsilon,
+\end{align*}
+and $g$ is preferred over $f$ even though the former has a smaller
+expected number of outputs than the latter. $\blacklozenge$
+\end{example}
+  
+\section{Comparison over the next $m$ bets}\label{sec:mbets}
+So far, we have considered the expected reward and utilities for the next \emph{single} classification; this setting fits for instance the case of a patient, who asks a doctor for a diagnosis and who is concerned only about the utility generated by the very next classification (his diagnosis). Conversely, an online trader, who performs $m$ trading operations every day, might accept to lose some money in the very next transaction, provided that the set of $m$ transactions generated at the end of day has high enough utility.  In this case, expected rewards and expected utilities should be computed over the
+next $m$ bets. In the following, we compare the random classifier $r$ and the vacuous classifier $v$ on the next $m$ bets; we denote by $v_m$ and $r_m$  the rewards of the vacuous and the random ones over the next $m$ instances. 
+
+Gamble $v_m$ has deterministic value $m/\numC$ and thus:
+\begin{equation}
+E[u(v_m)]=u\left(\frac{m}{\numC} \right).\notag% \label{eq:m_vac}
+\end{equation}
+To compute $E[u(r_m)]$, let us consider that classifier $r$ yields utility $u(\ell)$ when it correctly predicts $\ell$ outcomes in the next $m$ bets; considering that classifier $r$ issues a correct classification with probability $1/\numC$ (see Proposition~\ref{pr:r-v}),
+the probability of correctly predicting $\ell$ instances out of the next $m$ is the binomial:
+\begin{equation*}
+Bin(\ell,m,\frac{1}{\numC})=\binom{\ell}{m}\frac{1}{\numC}^\ell\left(1-\frac{1}{\numC}\right)^{m-\ell}.
+\end{equation*}
+The expected utility produced by the random classifier over the next $m$ bets is thus:
+\begin{equation}
+E[u(r_m)]=\sum_{\ell=1}^{m}u(\ell)Bin(\ell,m,\frac{1}{\numC}).\label{eq:m_ran}
+\end{equation}
+It is not immediate to compare the expected utilities of the random and vacuous classifiers using Equation~\eqref{eq:m_ran}; a clear understanding can be obtained through the second-order approximation given by Equation~\eqref{eq:second_order_appr}. In the following, we analyze in this way the logarithmic and the exponential utility. The second-order approximation of both the logarithmic and the exponential utility is very good, having relative absolute error consistently smaller than 1\%.
+%\begin{itemize}
+% \item IF SPACE: SCATTER PLOT OF ACTUAL AND APPROXIMATED UTILITIES.
+%\end{itemize}
+
+\subsection{Logarithmic Utility}
+The logarithmic utility is $u(x)\coloneqq \log(1+x)$, whence $u''(x)=-\frac{1}{(1+x)^2}$; applying Equation~\eqref{eq:second_order_appr}, we get:
+\begin{align}
+ u(E[r_m])+\frac{1}{2}
+u''(E[r_m])Var(r_m)=\nonumber\\
+ u(E[r_m])-\frac{Var(r_m)}{2(E[r_m]+1)^{2}}=\nonumber\\
+u\left(\frac{m}{\numC}\right)-\frac{m\frac{1}{\numC}\left(1-\frac{1}{\numC}\right)}{2(\frac{m}{\numC}+1)^{2}},&&\notag
+\end{align}
+where in the last passage we introduced the analytical expression of the variance for a binomial distribution.
+
+Thus, the (approximated) difference between the expected utility of the random and
+the vacuous over the next $m$ bets is
+\begin{align}
+d(m)=E[u(v_m)]-E[u(r_m)]=\notag\\
+\frac{\frac{m}{\numC}\left(1-\frac{1}{\numC}\right)}{2(\frac{m}{\numC}+1)^{2}} \propto\frac{m}{(\frac{m}{\numC}+1)^{2}},\label{eq:d}
+\end{align}
+where in the last passage we removed the proportionality constant $\frac{1}{2\numC}\left(1-\frac{1}{\numC}\right)>0$.
+Function $d(m)$ is shown in Figure~\ref{fig:log_util}.
+\begin{figure}[!ht]
+\begin{tikzpicture}
+\begin{axis}[smooth,width=7.5cm,height=5cm,xlabel=$m$, ylabel={$d(m)$}, domain=0:50, samples=31, every axis legend/.append style={nodes={right}}, legend style={at={(0.97,0.5)}}, ytick={0,0.04,0.08},scale=0.9]
+\addplot  {19*x/(800*(x/20+1)^2)};  \addlegendentry{20 classes}
+\addplot  {x/(8*(x/2+1)^2)};  \addlegendentry{2 classes}
+\end{axis}
+\end{tikzpicture}
+\caption{Function $d(m)$ for \emph{logarithmic} utility, under different number of classes.\label{fig:log_util}}
+\end{figure}
+%\begin{figure}[!ht]
+%\begin{tikzpicture}
+%\begin{axis}[xlabel=$m$, ylabel=$\cal C$,width=7.5cm]
+%\addplot3[surf,faceted color=blue,domain=1:100,y domain=2:20] {(x/y*(1-1/y))/(2*(x/y+1)^2)}; %
+%\end{axis}
+%\end{tikzpicture}
+%\caption{\hl{GC: 3d dependence of utility on $m$ and $\cal C$: is it any better than fig 1?? \textbf{Can be commented out if you want faster compilation}}\label{fig:3Dlog_util}}
+%\end{figure}
+
+The first derivative of  $d(m)$ is:
+\begin{equation}
+d'(m)=\frac{1}{(\frac{m}{\numC}+1)^2}-2\frac{\frac{m}{\numC}}{(\frac{m}{\numC}+1)^3}
+\propto 1-\frac{m}{\numC},\label{eq:d1m}
+\end{equation}
+where the  last passage is obtained considering that $(\frac{m}{\numC}+1)^3>0$.
+From Equations~\eqref{eq:d} and~\eqref{eq:d1m}, we can figure out that $d(m)$
+will monotonically increase up to $m<\numC$ (\emph{inversion point}), to then
+indefinitely decrease, so that  $d(m)\rightarrow0$ for $m\rightarrow\infty$; if expectations of utilities are computed over 
+a long enough number of bets, the expected utility produced by the two classifiers is the same.
+It also follows that increasing $\numC$ delays the convergence of the expected utilities to the same value, as also shown in Figure~\ref{fig:log_util}.
+
+\subsection{Exponential Utility}
+
+The exponential utility is $u(x)\coloneqq 1-\exp(-ax)$, where $a$ is a coefficient of risk aversion. Noting that $u''(x)=-a^2\exp(-ax)$, the second-order approximation yields:
+\begin{gather}
+ u(E[r_m])+\frac{1}{2}
+u''\left(\frac{m}{\numC}\right)Var(r_m)=\nonumber\\
+u\left(\frac{m}{\numC}\right)-\frac{1}{2}a^2\exp\left(-a\frac{m}{\numC}\right)
+m\frac{1}{\numC} \left(1-\frac{1}{\numC}\right),\notag
+\end{gather}
+whence
+\begin{gather}
+d(m)=-\frac{1}{2}a^2\exp\left(-a\frac{m}{\numC}\right)m\frac{1}{\numC}\left(1-\frac{1}{\numC}\right)\propto\nonumber\\
+\propto-\exp\left(-a\frac{m}{\numC}\right)m,\notag
+\end{gather}
+where the proportionality constant is $\frac{a^2}{2}\frac{1}{\numC}\left(1-\frac{1}{\numC}\right)>0$.
+
+We have
+\begin{align}
+d'(m)=\exp\left(-a\frac{m}{\numC}\right)\cdot \left( a\frac{m}{n}-1\right).\notag%\label{eq:exp_diff}
+\end{align}
+Function $d(m)$ has qualitatively the same behavior of the logarithmic case, but the inversion point is now located at $m=\frac{\numC}{a}$.
+Moreover, the difference between the expected utility of the two classifiers depends also on the risk-aversion coefficient $a$; higher risk aversion delays the convergence of the expected utilities, thus emphasizing the difference in favor of the vacuous on small $m$.
+
+\section{Experiments}\label{sec:expartif}
+To experimentally assess the performance of a credal classifier, we need a utility function to be applied on top of discounted accuracy. Let us fix the utility of a correct and determinate classification as $u(1)\coloneqq 1$ and the utility of a wrong classification (determinate or indeterminate) as $u(0)\coloneqq 0$; this is consistent with the assumption that you are risk neutral in the scale of the original rewards. 
+
+Let us initially consider the case of a binary classification problem. To fully specify the utility function, we have to define the value of $u(0.5)$. With $u(0.5)=0.5$, the utility leads to the standard discounted accuracy measure. Risk-aversion increases as $u(0.5)$ increases.  We assume that in case of risk aversion, $u(0.5)$ can reasonably lie between 0.65 and 0.8;  we call $u_{65}$ and $u_{80}$ the utility functions corresponding to these choices.
+
+In order to deal with classification problems with more than two classes, we adopt a quadratic utility function, which passes through $u(0)=0,u(1)=1$, and $u(0.5)=0.65$ or $u(0.5)=0.80$. The two utility functions are:
+\begin{eqnarray*}
+u_{65}(x)=-1.2x^2 + 2.2x,\\
+u_{80}(x)=-0.6x^2 + 1.6x,
+\end{eqnarray*}
+where $x$ denotes the discounted accuracy of the issued classification. These functions are shown in
+Figure~\ref{fig:quad_utils}. Note that  $u_{80}$ is slightly greater than 1 for some $x$ between 0.5 and 1; however, this part of the function is never used, as discounted accuracy cannot assume values between 0.5 and 1. This means that the range of values returned by all the functions will be $[0,1]$, which will allow us to interpret the resulting utility-discounted accuracies indeed as predictive accuracies (even though they are biased accuracies so as to take into account your personal preferences).
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[xlabel=$x$,ylabel=$u(x)$,width=7cm,height=5cm,legend pos=south east]
+      \addplot+[domain=0:1,mark=o] { -1.2*x^2 + 2.2*x }; % u_{0.5}=0.8
+      \addplot+[domain=0:1] { -0.6*x^2 + 1.6*x }; % u_{0.5}=0.65
+      \addplot+[domain=0:1] { x };  % u_{0.5}=0.5 
+      \legend{$u_{80}$,$u_{65}$,$u_{50}$}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The three quadratic utility functions obtained for different values of $u(0.5)$. The function corresponding to discounted accuracy is $u_{50}$.}
+  \label{fig:quad_utils}
+\end{figure}
+
+A well-known drawback of the quadratic utility function is that it models the risk aversion as increasing with wealth.
+Yet, at least under particular conditions, quadratic and exponential utility result in very similar choices \cite{buccola1982portfolio}. Moreover, using quadratic utility has the advantage to make Eq.~\eqref{eq:second_order_appr} an exact representation of the utility function, whose effects can then be interpreted very clearly as due to a compromise between increasing gain and reducing variability. We considered using the exponential utility too, but we eventually discarded it as it could not satisfactorily fit all the three values we chose for $u(0.5)$.
+
+\subsection{NBC versus NCC}\label{sec:NBCvsNCC}
+In this section we focus the comparison on two well-known classifiers: naive Bayes classifier (NBC \cite{duda1973}) as a representative of precise classifiers, and the naive credal classifier (NCC \cite{zaffalon1999a,zaffalon2001a,corani2008a}). In particular, we compare the expected utility generated by NBC and NCC on the next \emph{single} bet, namely on a single instance. 
+
+\subsubsection{Artificial data sets}
+In a first set of experiments, we generated artificial data sets considering a binary class and 10 binary features; we set the marginal chances of classes as uniform, while we drew
+the conditional chances of the features under the constraint $|\theta_{i1\ell}-\theta_{i2\ell}|\geq0.1 \,\, \forall i,j$, where $\theta_{ij\ell}$ denotes the chance of feature $A_i$ to be in state $\ell$ when $C=j$; the constraint  forced each feature to be strongly dependent on the class.
+We  drew $\theta$ 80 times uniformly at random and we consider the sample sizes: $s\in \{25, 50, 100\}$.
+We did not consider larger sample sizes, under which NCC would have been almost completely determinate, and thus not really different from NBC.
+For each pair $(\theta,s)$ we generated 50 training sets; we then evaluate the trained classifiers on a test set of 10000 instances.
+In the following, the instances indeterminately classified by NCC are referred to as the \emph{area of ignorance}. 
+% We denote as NBC(NCC-I) the accuracy of NBC on the area of ignorance.
+For each sample size, we thus perform $80\theta\times 50\text{ trials }=4000$ training/test experiments.
+In these experiments, we only consider the $u_{65}$ utility function.
+\begin{figure}[h]
+\begin{tikzpicture}
+    \begin{axis}[smooth,width=7cm,height=5cm, legend style={at={(0.95,0.3)},anchor=east},
+ xlabel=Sample size, ylabel=Accuracy/Utility, every axis legend/.append style={nodes={right}}]
+ \addplot
+        plot coordinates {
+        (25,87.4)
+        (50,89.7)
+        (100,90.5)
+        };
+    \addlegendentry{NCC: utility under $u_{65}$}
+    \addplot
+    plot coordinates {
+        (25,87)
+        (50,89.18)
+        (100,90.07)
+    };
+    \addlegendentry{NBC: accuracy, utility}
+
+\addplot [mark=triangle]
+        plot coordinates {
+        (25,84.28)
+        (50,88.46)
+        (100,89.88)
+        };
+    \addlegendentry{NCC: d. acc.}
+    \end{axis}
+    \end{tikzpicture}
+ \caption{Experimental results with artificial data; each point shows the median over 4000 experiments, performed with the same sample size $s$\label{fig:expe}. For NBC, accuracy and utility coincide. }
+ \end{figure}
+
+ %%%%%%%%%%%%%%%%%%%%%%%% TO-DO: REWRITE THIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% We set the utility of a determinate and successful classification as $u(1)\coloneqq 1$; the utility of a non-successful classification (determinate or indeterminate) as $u(0)\coloneqq 0$. This implies being risk neutral in the scale the original rewards are measured. It remains to set the utility $u(0.5)$ of an indeterminate classification; for a data set with two classes, an indeterminate classification has necessarily discounted accuracy of 0.5. 
+% We think that the value of $u(0.5)$  could reasonably lie between 0.65 and 0.8. 
+% In order to deal with more than two classes we fit a quadratic utility function which passes through $u(1)\coloneqq 1$, $u(0)\coloneqq 0$ and the desired value of $u(0.5)$.
+% Considering the values mentioned above, we get the following utility functions passing through $u(0.5)=0.65$ or $u(0.5)=0.8$: 
+% \begin{eqnarray}
+%        u_{65}(x)=  -1.2x^2 + 2.2x \\
+%        u_{80}(x)=  -0.6x^2 + 1.6x  
+% \end{eqnarray}
+% where $x$ denotes the discounted accuracy of the issued classification.
+% We take risk aversion into account by using a quadratic utility function $u(x)=(2-4u_{0.5})x^2+(4u_{0.5}-1)x$ parameterized by $u_{0.5}=u(0.5)$, the utility of predicting a set of two classes containing the correct one; 
+% Note that for $u(0.5)=0.5$ the utility is linear and corresponds to the standard d-accuracy measure, and that risk aversion increases as we increase the value of $u(0.5)$. Figure~\ref{fig:quad_utils} depicts the three utility functions used in the experiments.
+
+ 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+As can be seen in Figure~\ref{fig:expe}, the discounted accuracy of NBC is higher than the discounted accuracy of NCC; this means that, on the area of ignorance, NBC is doing better than the $\set{K}$-random guesser, namely the classifier which picks the class at random from among those returned by NCC.
+Note that for NBC there is no distinction between accuracy and utility. 
+However, NCC produces higher expected utility than NBC at each sample size, even under the conservative choice $u_{65}$.
+% The determinacy of NCC rises steadily with the sample size; interestingly, at the same time the value of NBC(NCC-I) decreases; this means that NCC is getting better at identifying instances which are really hard to classify. For instance, NBC(NCC-I) is 64\% for $s=25$, and 54\% for $s=100$; this explains why the gap of utility tends to slightly increase with the sample size. Note however that the restriction of the area of ignorance (20\% for $s=25$, and only 4\% for $s=100$) works against enlarging the gap between NCC and NBC.
+% Results similar to those shown here are obtained also using logarithmic utility; however we find it clearer in this simple setting to reason about the only point to elicit, $u(0.5)$, rather about the whole utility function.
+
+\subsubsection{Experiments with downsampling}\label{sec:expkrkp}
+\begin{figure}[htp]
+\begin{tikzpicture}
+    \begin{axis}[smooth,width=7.5cm,height=5cm,legend style={at={(0.97,0.3)},anchor=east},
+ xlabel=Sample size, ylabel=Accuracy/Utility, every axis legend/.append style={nodes={right}}]
+ \addplot
+        plot coordinates {
+        (5,65)
+        (10,67)
+        (15,70)
+	(20,71)
+        (30,75)
+        (50,79)
+        (100,83)
+        (150,84)
+        };
+    \addlegendentry{NCC: utility under $u_{65}$}
+    \addplot  plot coordinates {
+        (5,60)
+        (10,68)
+        (15,66)
+	(20,72)
+        (30,75)
+        (50,77)
+        (100,82)
+        (150,83)
+    };
+    \addlegendentry{NBC:  accuracy, utility}
+
+
+\pgfplotsset{
+every mark/.append style={solid}
+}
+
+
+
+\addplot [mark=triangle] %[smooth,color=red,mark=x]
+        plot coordinates {
+        (5,51)
+        (10,54)
+        (15,58)
+	(20,62)
+        (30,66)
+        (50,73)
+        (100,79)
+        (150,82)
+        };
+    \addlegendentry{NCC: d. acc.}
+
+    \end{axis}
+    \end{tikzpicture}
+\caption{\label{fig:kr-kp}Utility and discounted accuracy generated by NBC and NCC for downsampled versions of kr-kp.}
+\end{figure}
+
+We then performed some experiments on the kr-kp data set from the UCI repository.
+It is a binary data set, in which the two classes are evenly distributed; it contains 36 binary features and 3200 instances. 
+We downsampled the data set, generating training sets of size $s \in \{5, 10, 15, 20 ,30, 50, 100, 150\}$. For each sample size, we sampled 100 different training sets;  the test set was given by the instances left in the original data set. Again, we considered the conservative choice $u_{65}$.
+%  All training and test sets are \emph{stratified}, namely the proportion among the two classes matches that of the original data set.
+The average results are shown in Figure~\ref{fig:kr-kp}. The determinacy of NCC (not shown) steadily increases with the sample size, as well as the discounted accuracy of NCC and the accuracy of NBC. For very small sample sizes, NCC is almost always indeterminate; in this case, its utility corresponds to $u(0.5)$ and thus is 0.65; in the same situation NBC is only slightly better than random guessing. Both the expected utility of NBC and NCC increases with the sample size; that of NCC remains however slightly superior. 
+% In fact, under a data set with two classes, whether NCC or NBC produces a higher utility can be realized by comparing NBC(NCC-I) with $u(0.5)$; if  $u(0.5)<$NBC(NCC-I), then NCC produces higher utility than NBC, and vice versa. 
+By adopting the $u_{80}$ function instead of the $u_{65}$, the advantage of NBC would have obviously been more evident.
+% However, a careful elicitation of the decision maker's utility is fundamental, when dealing with utility-based metrics
+
+% \begin{table}
+% %\begin{small}
+% \begin{centering}
+% \begin{tabular}{rcc}\toprule
+% $s$ & \multicolumn{1}{c}{NCC:} & NBC:	\\
+%  & {\small Determ} & {\small NBC(NCC-I)}\\
+%  &(\%) & (\%) \\ \cmidrule(r){1-3}
+% 5 & 2  & 59\\
+% \rowcolor [gray]{.8}
+% 10 & 10  & 65\\
+% 15 & 25  & 60\\
+% \rowcolor [gray]{.8}
+% 20 & 29  & 64\\
+% 30 & 41  & 64\\
+% \rowcolor [gray]{.8}
+% 50 & 60  & 62\\
+% 100 & 78 & 60\\
+% \rowcolor [gray]{.8}
+% 150 & 85  & 59\\ \bottomrule
+% \end{tabular}
+% \par\end{centering}
+% %\end{small}
+% \caption{\label{tab:kr-kp}Results for the kr-kp experiment; Determ. indicates the \% of instances determinately classified by NCC.}
+% 
+% \end{table}
+
+\subsubsection{Experiments with real data sets} \label{sec:nbcvsncc}
+
+To get a more comprehensive picture of the performances of NBC and NCC, we performed experiments with 55 datasets from the UCI repository.  We will consider this collection of data sets also in the next sections.  On each data set, we performed  ten runs of ten-fold cross validation.
+To compare two classifiers on the \textit{whole} collection of data sets, we used the Wilcoxon signed-rank test, as recommended by \cite{demsar06jmlr}. 
+All tests are performed with $\alpha\coloneqq0.05$. 
+
+
+Since NCC operates only on discrete data, each dataset has been discretized using the MDL-based discretization.  Under the risk-neutral utility (i.e., discounted accuracy), the accuracy of NBC was higher than the discounted accuracy of NCC in 33 of the datasets, while the converse held on 23 datasets; this difference was statistically significant. This indicates that NBC most often performs better than the $\set{K}$-random guesser on the instances where NCC is indeterminate; surprisingly, it also happens to perform worse in several data sets. However, no significant difference was found under $u_{65}$ and under $u_{80}$, when comparing the expected utility produced by NCC and NBC over the collection of data sets.
+% Under $u_{65}$, NBC had higher expected utility than NCC on 31 datasets, and the converse was true for 24 datasets; under the more risk-averse utility function $u_{80}$, NBC obtained a higher expected utility than NCC on 30 datasets whereas the opposite occurred in 25 datasets; in these cases, the difference among classifiers was \textit{not} significant.  
+The expected utilities of NBC and NCC on each dataset under $u_{65}$ and $u_{80}$ are compared in Figure~\ref{fig:nbcVSncc} through scatter plots. The straight line in the figures represents equal expected utility performance. Points above the line indicate cases where NBC outperformed NCC; conversely, points below the line indicate cases where NCC outperformed NBC. The plots show a continuous increase of the expected utility of NCC on each dataset as we move from $u_{65}$ to $u_{80}$,
+as expected.
+\begin{figure}[!htp]
+  \centering
+  %\subfigure[Linear utility]{
+%\subfigure[Utility $u_{65}$]{
+\subfigure{
+ \begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NBC, title=Utility $u_{65}$]
+      \addplot+[only marks] table[col sep=comma, x=U65, y=ACC] {nbcvsncc.csv};
+      \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+    \end{axis}
+  \end{tikzpicture}
+ \label{fig:accVSu65}
+}
+\subfigure{
+ \begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NBC, title=Utility $u_{65}$ after feature selection]
+      \addplot+[only marks] table[col sep=comma, x=U65, y=ACC] {nbcvsnccwfs.csv};
+      \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+    \end{axis}
+  \end{tikzpicture}
+ \label{fig:accVSu65-wfs}
+}
+\subfigure{
+ \begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NBC, title=Utility $u_{80}$]
+      \addplot+[only marks] table[col sep=comma, x=U80, y=ACC] {nbcvsncc.csv};
+      \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+    \end{axis}
+  \end{tikzpicture}
+ \label{fig:accVSu80}
+}
+\subfigure{
+ \begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NBC, title=Utility $u_{80}$ after feature selection]
+      \addplot+[only marks] table[col sep=comma, x=U80, y=ACC] {nbcvsnccwfs.csv};
+      \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+    \end{axis}
+  \end{tikzpicture}
+ \label{fig:accVSu80-wfs}
+  }
+%  \subfigure{
+%   \begin{tikzpicture}
+%     \begin{axis}[width=6cm,height=5cm,xlabel=NCC,ylabel=NBC,title=Utility $u_{65}$ on indeterminate instances, after feature selection]
+%       \addplot+[only marks] table[col sep=comma, x=nccUtil65, y=nbcAcc] {nbc_ncc_indUtil_fs.csv};
+%       \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+%     \end{axis}
+%   \end{tikzpicture}
+%  \label{fig:accVSdacc}
+% }
+%  \subfigure[Utility $u_{80}$ on indeterminate instances, after feature selection]{
+%   \begin{tikzpicture}
+%     \begin{axis}[width=6cm,height=5cm,xlabel=NCC,ylabel=NBC]
+% %      \addplot+[only marks] table[col sep=comma, x=DACC, y=ACC] {nbcvsnccwfs.csv};
+%       \addplot+[only marks] table[col sep=comma, x=nccUtil80, y=nbcAcc] {nbc_ncc_indUtil_fs.csv};
+%       \addplot [no marks] coordinates { (0.19,0.19) (1,1) };
+%     \end{axis}
+%   \end{tikzpicture}
+%  \label{fig:accVSdacc-wfs}
+% }
+  \caption{Scatter plot comparing NBC and NCC on the 55 datasets.}
+  \label{fig:nbcVSncc}
+\end{figure}
+
+The median accuracy of NBC was 82\%, while the median expected utility of NCC vary from 75\% under linear utility to 78\% under $u_{65}$ to 81\% under $u_{80}$, suggesting that, as expected, NCC's performance improves as we increase risk aversion. On 33 out of the 55 datasets, NCC had a determinacy higher than 90\%, indicating that, in most of the datasets, NCC issued few indeterminate predictions. The median determinacy was 0.95.
+
+NCC faces difficulties when the contingency table induced from a data set contains many zero counts, which causes NCC to be excessively indeterminate. Several such data sets are comprised in our collection. In these cases, restricting the credal set of NCC can  largely increase the expected utility of NCC \cite{corani2010restricting}; however,  this is outside the scope of this paper. 
+
+However, in order to mitigate such problems, we repeated the experiments after pre-processing each datasets with a correlation-based feature selection algorithm. 
+This is anyway a sensible approach, since naive classifiers are negatively affected by redundant features.  
+The scatter plots after feature selection are shown in the right column of Figure~\ref{fig:nbcVSncc};  after feature selection, NBC and NCC performed much more similarly. In fact, feature selection increases the determinacy of NCC: on 37 datasets NCC had a determinacy higher than 90\%. Thus, it is not surprising that NBC and NCC exhibit similar performance in most of the datasets.
+However, NCC shows in this case a better performance than NBC; in particular:
+\begin{itemize}
+ \item under $u_{65}$: NCC has higher expected utility in 37 data sets, NBC in 28; this difference was \textit{not} significant;
+\item  under $u_{80}$: NCC has higher expected utility in 42 data sets, NBC in 13; this difference was  \textit{significant}.
+\end{itemize}
+
+As last analysis, we compared the expected utility produced by the two classifiers only on the instances indeterminately classified. This comparison is meaningful, since on the instances determinately classified the two classifiers return the same classes.
+Under $u_{65}$, NCC produces on the indeterminately classified instances, an expected utility that is, averaging over all data sets, about 9\% greater than that produced by NBC on the same instances; the 95\% confidence interval of this improvement is 1--19\%. 
+Under $u_{80}$, NCC produces on the indeterminately classified instances, an expected utility which is, averaging over all data sets, about 36\% greater than that produced by NBC on the same instances; the 95\% confidence interval of this improvement is 24--48\%.
+These values refer to the case when feature selection is applied; they show that it is beneficial to suspend the judgment on the instances identified as doubtful by NCC.
+Yet, feature selection seems important to exploit the maximum potential of NCC, which otherwise might suffer from excessive indeterminacy.
+ 
+
+% Under $u_{65}$, NCC had higher expected utility in 37 cases, 
+% NBC was higher than NCC's one in 18 datasets, while the converse occurred in 37 datasets. This was not found to be statistically significant. At last, under $u_{80}$, the results were strongly favorable to NCC: in 42 datasets, NCC had the highest expected utility, whereas NBC's expected utility was the highest in 13 datasets. This difference was found to be statistically significant.
+
+% \begin{table}[htp]
+%   \centering
+%   \begin{tabular}{lrr}
+%     \toprule
+%       $u_{0.5}$  &  NBC & NCC\\ \midrule
+%     0.5 & 0.82 & 0.75 \\
+%     0.65 & 0.82 & 0.78 \\
+%     0.8 & 0.82 & 0.81 \\ \bottomrule
+%   \end{tabular}
+%   \caption{Median expected utility of NBC and NCC on the datasets from UCI.}
+%   \label{tab:NBCvsNCCmedians}
+% \end{table}
+
+% Median Determinacy: 0.95. Ranks: 4.0	1.05	2.0	2.94
+
+% \begin{table}
+%   \centering\small
+%   \input{nbcvsncc}
+%   \caption{Expected utility (in \%) of NBC and NCC on each of the datasets.}
+%   \label{tab:NBCvcNCC}
+% \end{table}
+
+% With feature selection: medians: acc: 80.21 dacc:	0.7852 u65:	0.7932 u80:	0.8026 det:	0.9627
+
+\subsection{Experiments with credal classifiers} \label{sec:credalclass}
+
+We performed experiments with four state-of-the-art credal classifiers whose implementations are available in Weka-IP:\footnote{\url{http://decsai.ugr.es/~andrew/weka-ip.html}} NCC, Lazy Naive Credal Classifier (LNCC), Credal Model Averaging (CMA), Credal Decision Tree (CDT).
+For a review of these methods, see \cite{itip}.
+ % Each classifier was evaluated using 10 runs of a ten-fold cross-validation on 55 datasets from the UCI repository (the datasets were discretized before each run).
+We used the quadratic utility functions in Figure~\ref{fig:quad_utils} to measure the sensitivity of the classifiers' performance to risk aversion. Tables~\ref{tab:medians} and~\ref{tab:determinacies} contain the median expected utility and median determinacy, respectively, of the classifiers over all datasets. From these tables, it is possible to see that CMA is the more determinate (in terms of median) of the classifiers, and also the one with highest expected utility. Likewise, NCC is the more indeterminate of the classifiers and it is also the one that benefits most from the increase of risk aversion: the increase in expected utility is greater for NCC than for other classifiers. CDT, on the other hand, seems to take little advantage on the increase of risk aversion.
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+      $u_{0.5}$  &  NCC & LNCC & CMA & CDT\\ \midrule
+    0.5 & 0.75 & 0.77 & \textbf{0.81} & 0.79\\
+    0.65 & 0.78 & 0.81 & \textbf{0.82} & 0.79 \\
+    0.8 & 0.81 & \textbf{0.83} & \textbf{0.83} & 0.80 \\ \bottomrule
+  \end{tabular}
+  \caption{Median expected utility of credal classifiers.}
+  \label{tab:medians}
+\end{table}
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{rrrr}
+    \toprule
+      NCC & LNCC & CMA & CDT\\ \midrule
+      95.03 &  97.90 & 99.56 & 97.49 \\ \bottomrule
+  \end{tabular}
+  \caption{Median determinacy (in \%) of credal classifiers on the datasets.}
+  \label{tab:determinacies}
+\end{table}
+% Median determinacy after feat sel: 0.9633	0.9914	0.9956	0.9813
+
+To evaluate whether there was a statistically significant difference between the performance of classifiers across datasets, we performed a Friedman test % at the usual 5\% significance level for each utility function using the F-statistic
+as suggested by Demsar~\cite{demsar06jmlr}. The mean relative ranks according to utility function appear in Table~\ref{tab:ranks}.\footnote{For each dataset, we assign rank 1 to the classifier with highest expected utility, 2 to the classifier with the second highest expected utility, and so on. The mean relative rank is then the average of the ranks of a classifier over all datasets.} The tests found a significant difference under the risk-neutral utility function (i.e., discounted accuracy), but no significant difference under any of the risk-averse utility functions ($u_{65}$ and $u_{80}$). We then applied a Nemenyi test to detect significant improvements between pairs of classifiers under the risk-neutral utility function. The result of the test is shown in Figure~\ref{fig:dacc-ranks}. Each segment represents an interval of significance for a classifier, with its center denoting the classifier's mean relative rank. A classifier $X$ is significantly outperformed by a classifier $Y$ if $X$'s corresponding segment appears on the right of $Y$'s segment and the two segments do not overlap. This is the case of NCC and CMA, and NCC and CDT, but not of any of the pairs NCC and LNCC, LNCC and CMA, LNCC and CDT, or CMA and CDT. In other words, NCC is significantly outperformed by CMA and CDT under the risk-neutral utility, but no other significant difference was observed among other pairs of classifiers.
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+      $u_{0.5}$ &  NCC & LNCC & CMA & CDT\\ \midrule
+    0.5 & 3.05 & 2.48 & 2.28 & \textbf{2.18}\\
+    0.65 & 2.81 & 2.54 & 2.47 & \textbf{2.18} \\
+    0.8 & 2.56 & 2.48 & 2.59 & \textbf{2.36} \\ \bottomrule
+  \end{tabular}
+  \caption{Mean relative rank of credal classifiers on the datasets.}
+  \label{tab:ranks}
+\end{table}
+
+\begin{figure}[htp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[xlabel=Mean relative rank,width=7cm,height=4cm,ytick={1,2,3,4},yticklabels={NCC,LNCC,CMA,CDT}]
+      \addplot[mark=*,only marks,error bars/x dir=both, error bars/x fixed=0.31622204] coordinates {
+        (3.054545455,1) (2.481818182,2) (2.281818182,3) (2.181818182,4)
+       };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Nemenyi test for discounted accuracies of credal classifiers.}
+  \label{fig:dacc-ranks}
+\end{figure}
+
+The determinacy and expected utility of the classifiers on each dataset are shown in Tables~\ref{tab:detnofs}--\ref{tab:u80nofs}. 
+
+The squash-stored dataset provides an interesting case of the impact of risk aversion on the performance of credal classifiers. In this dataset, NCC is much more indeterminate than CDT (determinacy rate of 42.4\% against 95.17\%). Under linear utility (i.e., discounted accuracy), CDT outperforms the other classifiers (e.g., expected utility of 64.64\% against an expected utility of 57.19\% for NCC), but it is outperformed by NCC under $u_{80}$. In fact, NCC outperforms all the other classifiers in this setting, and obtains an expected utility of 72.6\% against an expected utility of 65.95\% for CDT. A similar phenomenon is seen in this dataset also for LNCC, which is even more indeterminate (determinacy of 35.97\%) than NCC. LNCC's expected utility jumps from 49.84\% (the lowest) under linear utility to 66.76\% (the second highest) under $u_{80}$.
+
+Since naive classifiers are sensitive to redundant information, we repeated the experiments after performing correlation-based feature selection. With feature selection, no classifier consistently outperformed another according to a Friedman test, irrespective of the utility function. Yet, CDT was found to be overall statistically significantly more determinate than others. % The relative rankings of the classifiers after feature selection were: NCC: 1.7; LNCC: 2.73; CMA: 2.91; CDT: 2.64.
+Tables~\ref{tab:determinacies-with-feat-sel} and~\ref{tab:medians-with-feat-sel} show the median determinacy and median expected utility, respectively, of each classifier after the feature-selection step. By contrasting the results with those of Tables~\ref{tab:determinacies} and~\ref{tab:medians}, one can see that NCC and LNCC become more determinate with feature selection, while CDT becomes more indeterminate (CMA's determinacy remains unaltered). Also, under the risk-neutral or the slightly risk-averse utility (i.e., for discounted accuracy or $u_{65}$), NCC and LNCC have their median expected utility increased, while CDT exhibits a decrease in median expected utility and CMA is unaffected by the feature selection. Under $u_{80}$, feature selection produces a small decrease on median expected utilities of all classifiers. Relatively to others, NCC appears to benefit most from feature selection and risk aversion. This is also shown in Table~\ref{tab:ranks-with-featsel}, which reports the mean relative rankings of classifiers.
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{rrrr}
+    \toprule
+      NCC & LNCC & CMA & CDT\\ \midrule
+    96.33 & 99.14 & 99.56 & 98.13\\ \bottomrule
+  \end{tabular}
+  \caption{Median determinacy (in \%) of credal classifiers after feature selection.}
+  \label{tab:determinacies-with-feat-sel}
+\end{table}
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+      $u_{0.5}$  &  NCC & LNCC & CMA & CDT\\ \midrule
+    0.5 & 0.79 & \textbf{0.81} & \textbf{0.81} & 0.77\\
+    0.65 & 0.79 & 0.81 & \textbf{0.82} & 0.78 \\
+    0.8 & 0.80 & 0.82 & \textbf{0.83} & 0.78 \\ \bottomrule
+  \end{tabular}
+  \caption{Median expected utility of credal classifiers after feature selection.}
+  \label{tab:medians-with-feat-sel}
+\end{table}
+
+\begin{table}[htp]
+  \centering
+  \begin{tabular}{lrrrr}
+    \toprule
+      $u_{0.5}$        &  NCC & LNCC & CMA & CDT\\ \midrule
+    0.5 & 2.89 & 2.41 &\textbf{ 2.31 }& 2.39\\
+    0.65 & 2.69 & 2.44 & 2.45 & \textbf{2.42} \\
+    0.8 & 2.50 & 2.50 & \textbf{2.40}§ & 2.60 \\ \bottomrule
+  \end{tabular}
+  \caption{Mean relative rank of credal classifiers after feature selection.}
+  \label{tab:ranks-with-featsel}
+\end{table}
+
+All in all, among the four credal classifiers we tested, none consistently outperformed others when risk aversion is taken into account.
+Even under a risk-neutral utility, a simple correlation-based feature selection step was sufficient to boost NCC's performance and lead to no significance difference between classifiers.
+
+% \newpage
+\subsection{Comparison with the non-deterministic classifier of Del Coz et al., 2009.}\label{sec:coz}
+% \newpage
+It is interesting to consider classifiers that return set-valued classifications and that have been developed outside 
+the community of imprecise probability. In this section,  we consider the \textit{non-deterministic}
+classifier of \cite{JdalCozlearning} (NDC). This algorithm can be applied on top of any probabilistic classifier;
+it analyzes the posterior probability and decides whether to return a single class or a set of classes.
+Such algorithm thus works with a  
+\textit{single} posterior distribution, rather than with a posterior credal set. We implemented it to run on top of the NBC, so as to compare it against NCC: in this case, NCC and NDC can be seen as two alternatives for generating set-valued classifications with a naive classifier.
+
+The NDC classifier optimizes the expected \textit{F-measure} of the issued classification.
+The F-measure is a metric devised within the field of Information Retrieval and defined as the harmonic average
+of \textit{recall} and \textit{precision}. 
+Let $\set{K}\subseteq\set{C}$ be a set-valued prediction made of $\numK$ classes and $\I_{\set{K}}$ the indicator function of $\set{K}$, namely whether it contains or not the actual class.
+The recall $(r)$ and the precision $(p)$ are defined as:
+\begin{eqnarray}
+r(\set{K})\coloneqq\I_{\set{K}}, \nonumber \\
+p(\set{K})\coloneqq\frac{\I_{\set{K}}}{\numK}. \nonumber
+\end{eqnarray}
+Thus, recall corresponds to whether or not a prediction is successful; precision corresponds  to discounted accuracy.
+The F-measure  $F_{\beta}$ is defined as:
+\begin{equation}
+ F_{\beta}(\set{K})\coloneqq\frac{(1+\beta^2) pr}{\beta^2p+r}.
+\end{equation}
+The most common choices for $\beta$ are $\beta=1$ or $\beta=2$, yielding respectively the $F_1$ and $F_2$ measures. In Table \ref{tab:prec-recall} we provide some examples comparing $F_1$ and $F_2$  measures with $u_{65}$ and $u_{80}$.
+
+\begin{table}[!ht]
+\begin{centering}
+\begin{tabular}{c>{\centering}p{1.5cm}ccccc}\toprule
+Prediction  & Precision (d. acc.) & Recall & $F_{1}$ & $F_{2}$ & $u_{65}$ & $u_{80}$\\ \cmidrule(r){1-7}
+$1$ & 1 & 1 & 1 & 1 & 1 & 1\tabularnewline
+$\{1,2\}$ & 0.5 & 1 & 0.67 & 0.83 & 0.65 & 0.80\tabularnewline
+$\{1,2,3\}$ & 0.33 & 1 & 0.50 & 0.71 & 0.47 & 0.60\tabularnewline
+$\{2,3,4\}$ & 0 & 0 & 0 & 0 & 0 & 0\\  \bottomrule
+\end{tabular}
+\par\end{centering}
+\caption{\label{tab:prec-recall}Scores of different predictions, assuming the actual class to be $1$. }
+\end{table}
+
+
+\begin{figure}[!ht]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[xlabel=${\numK}$,ylabel=$u(k)$,width=7cm,height=5cm,legend pos=north east]
+      \addplot+[domain=1:15] { 5/(4+x) };  
+      \addplot+[domain=1:15] { -1.2*(1/x)^2 + 2.2*(1/x) }; % u_{0.5}=0.8
+      \addplot+[domain=1:15] { 2/(1+x) };  
+      \addplot+[domain=1:15] { -0.6*(1/x)^2 + 1.6*(1/x) }; % u_{0.5}=0.65
+%       \addplot+[domain=1:20] { 1/x }; % u_{0.5}=0.65
+      \legend{$F_2$,$u(0.8)$,$F_1$,$u(0.65)$}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Comparison of $F$-metrics and quadratic utility functions.}
+  \label{fig:f_metric_quad_utils}
+\end{figure}
+
+A graphical comparison of the functions $F_1$, $F_2$, $u_{65}$ and $u_{80}$ is given  in Figure \ref{fig:f_metric_quad_utils}; it shows that 
+$F_1$ is comprised, for any value of  $\numK$, between $u_{65}$ and $u_{80}$, while $F_2$ rewards the indeterminate classifications much more  than the other functions;  this can be realized also from Table \ref{tab:prec-recall}. 
+
+Thus the F-measure can be meaningfully interpreted, when dealing with indeterminate classifiers, as a utility function for set-valued classifications. In order to apply the NDC algorithm, the user should specify the value of $\beta$;  we adopt $\beta\coloneqq1$,  as $F_1$ is closer to both $u_{65}$ and $u_{80}$ than $F_2$.
+
+A comparison between NCC and NDC (applied on top of NBC) has been already carried out in \cite{JdalCozlearning} considering UCI data sets and bioinformatics data sets, and reporting an overall superiority of NDC over NCC. 
+It is somehow expected for NCC not to perform very well on raw bioinformatics data sets, which are characterized by several thousands of features and only some tenths of instances: they typically induce contingency tables with many zero counts, which make NCC excessively cautious; this issue is named the \textit{feature problem} in \cite{corani2010restricting}. 
+
+Thus, we work with the collection of  UCI data sets already considered  in the previous sections. On each data set, we performed 10 runs of 10-folds cross-validation and eventually compared the performance of the two classifiers through a paired $t$-test. To complete the analysis,  we then compared the performance of the two classifiers on the \textit{whole} collection of data set through the Wilcoxon signed-rank test. All tests were performed with $\alpha\coloneqq0.05$. As utility functions we consider $u_{65}$, $u_{80}$ and $F_1$.
+
+
+\begin{figure}[!ht]
+\centering
+\subfigure{
+\begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NDC, title=Determinacy]
+\addplot+[only marks] table[col sep=comma, x=NccDeterm, y=NndDeterm] {ncc_ndc_results.csv};
+\addplot [no marks]
+        plot coordinates {
+(0,0)
+(1,1)
+        };
+\end{axis}
+\end{tikzpicture}
+}
+\subfigure{
+\begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, title=$u_{65}$]
+\addplot+[only marks] table[col sep=comma, x=NccUtil65, y=NndUtil65] {ncc_ndc_results.csv};
+\addplot [no marks]
+        plot coordinates {
+(0,0)
+(1,1)
+        };
+\end{axis}
+\end{tikzpicture}
+}
+\subfigure{
+\begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, ylabel=NDC, title=$F_1$]
+\addplot+[only marks] table[col sep=comma, x=NccF1, y=NndF1] {ncc_ndc_results.csv};
+\addplot [no marks]
+        plot coordinates {
+(0,0)
+(1,1)
+        };
+\end{axis}
+\end{tikzpicture}
+}
+\subfigure{
+\begin{tikzpicture}
+    \begin{axis}[width=6cm,height=5cm, xlabel=NCC, title=$u_{80}$]
+\addplot+[only marks] table[col sep=comma, x=NccUtil80, y=NndUtil80] {ncc_ndc_results.csv};
+\addplot [no marks]
+        plot coordinates {
+(0,0)
+(1,1)
+        };
+\end{axis}
+\end{tikzpicture}
+}
+\caption{Scatter plots comparing NCC and NDC on 55 data sets.\label{fig:ncc-ndc}}
+\end{figure}
+
+Figure \ref{fig:ncc-ndc} compares NCC and NDC through scatter plots.
+The scatter plot of determinacy is very spread, showing that the two classifiers differently identify the instances over which to suspend the judgment.
+In fact, NCC is concerned with the sensitivity of the posterior distribution to the choice of the prior while NDC is concerned, grossly simplifying, with whether the probability of the most probable class is high enough.
+For instance  NCC becomes more determinate as the sample size increases; this is not necessarily the case for NDC. 
+Moreover, NCC becomes generally more indeterminate as the number of features increases \cite{corani2008a}; on the contrary,  NDC 
+becomes \textit{less} indeterminate in these cases, since an increased number of features emphasizes the `probability overshooting' \cite{hand2001idiot} phenomenon that characterizes naive classifiers.
+
+The scatter plots of $u_{65}$, $u_{80}$, $F_1$ show a certain balance between the two classifiers. However, a bunch of data sets can be spotted, in which NCC is clearly outperformed; such data sets are indeed characterized by zero counts. 
+% In these cases, restricting the credal set of NCC can  largely increase the expected utility of NCC \cite{corani2010restricting}; however,  this is outside the scope of this paper. 
+Apart from those cases,  the performance of the two classifiers appears quite balanced. This is also confirmed by the statistics of wins, ties and losses shown in Table \ref{tab:ncc-nnd}. The performance of two classifiers on  the \textit{whole} collection of data sets is statistically different, in favor of NDC,  only in the case of $u_{80}$. One might wonder why NDC, being designed to maximize $F_1$, outperforms NCC under $u_{80}$ and not under $F_1$. As pointed out in \cite{JdalCozlearning}, for a given $\tilde{\beta}$,  NDC achieves the best performance under $F_{\tilde{\beta}}$  not necessarily using $\beta=\tilde{\beta}$ within its internal objective function.
+
+\begin{table}[!ht]
+\begin{centering}
+\begin{tabular}{cccc}\toprule
+Utility  & NCC wins&  ties & NDC wins\\ \cmidrule(r){1-4}
+$u_{65}$  & 21 & 14 & 18  \tabularnewline
+$F_1$ & 20 & 16 & 17 \\ 
+$u_{80}$  & 14 & 13 & 26  \\ \bottomrule%\tabularnewline
+ %\tabularnewline
+% $F_2$ & 0 & 0 & 0 \\  \bottomrule
+\end{tabular}
+\par\end{centering}
+\caption{\label{tab:ncc-nnd} Comparison of NCC and NDC on the collection of data sets under various utilities.}
+\end{table}
+
+Overall, NCC and NDC represent two very different approaches to yield indeterminate classifications. A nice characteristic of NDC is that it tunes its output according to 
+the utility function being used; although in \cite{JdalCozlearning} this is done only for $F_1$ and $F_2$,  with some further effort it should be possible to  extend it also to more general utility functions. On the other hand, such an approach cannot identify prior-dependent classifications, which are clearly fragile. This is related to the discussion presented in the next section.
+%However, this comparison shows how utility-based metrics allow for a sound comparison of classifiers  which return set-valued classifications.
+% We also recommend including  in the experimental analysis a sensitivity study for he choice of the utility functions; the set of functions discussed in this paper should constitute a reasonable starting point.
+
+
+\subsection{Utility-discounted accuracy vs. rejection option}\label{sec:rejopt}
+The discussion in the previous section gives us the opportunity to comment on a related question, which is concerned with classifiers based on the \emph{rejection option}. These are (usually) precise classifiers that do not classify an instance if the posterior probability of the optimal class is less than a fixed threshold $t$. Thus any determinate classifier that computes the posterior probabilities over the classes can easily be enabled to implement the rejection option. As we have mentioned in Section~\ref{sec:coz}, also the NDC is close in spirit to a classifier based on the rejection option, although it cannot be just reduced to that.
+
+To make things easier in the following discussion, we focus on a very simple setup. We consider a binary classification problem with $\set{C}=\{1,2\}$; moreover, we assume that the class variable is independent of the feature variables, and that the population proportion (that is, the chance, or true probability) for class $1$ equals $0.7$. This means that the best one can hope for is to correctly classify the $70\%$ of the instances. 
+
+Now assume that we implement the rejection option on the NBC, and that we select $t\coloneqq 0.8$. This would turn the NBC into an indeterminate classifier, call it NBC$_t$, because we could identify the missing classification with the vacuous prediction $\{1,2\}$. How would this classifier compare with the NCC, under utility-discounted accuracy?
+
+Assume that we evaluate the classifiers under $u_{80}$, and that the learning set is large enough so that after a while the NCC becomes nearly indistinguishable from the NBC. This means that, in those stationary conditions, the NCC will correctly predict $70\%$ of the instances in the test set, and hence its expected utility will be $0.7$ too. On the other hand, in the same conditions, the NBC$_t$ will constantly output the vacuous prediction $\{1,2\}$, simply because in the considered problem a class cannot have probability larger than or equal to $0.8$. As a consequence, the expected utility of NBC$_t$ will be $0.8$. The outcome of the comparison will then be in favor of NBC$_t$, even more so as the comparison will become more and more stable as the test set grows larger.
+
+Even though the occurrence of a situation like the one described is fully consistent with the development we did of our utility-based metric, one could still be puzzled. In fact, on the one hand, it is correct that NBC$_t$ scores better than NCC in case your risk aversion is expressed by $u_{80}$: for you just prefer the vacuous prediction to a determinate prediction with probability $0.7$. On the other hand, if our aim is to fairly compare classifiers, perhaps we should consider that the outcome of the comparison is not determined by a fault of NCC, but rather by the characteristics of the problem: in fact, NCC did learn from the data everything that could be learned. 
+
+More technically speaking, one should consider that the rejection option can be understood as a way to deal with cost-sensitive classification issues without introducing rewards other than 0-1 (as in matrix $\I$). In fact, decision theory prescribes that the optimal choice of a class under matrix $\I$ is the one that maximizes the posterior probability. Why should then one avoid selecting such a class, as in the case of the rejection option? The underlying motivation is that one has is mind a reward matrix different from $\I$: a matrix in which a wrong classification is penalized more than what happens using $\I$. For this reason, it is perceived that it is better not to issue a classication when the posterior probability of the class is not high enough.
+
+This suggests that the classifiers based on the rejection option do not fully comply with the framework that we have been developing, because a founding assumption of our framework is that $\I$ is the chosen reward matrix. Therefore, in order to make the comparison fair, it might be considered to exclude the classifiers that are based on some kind of rejection option. 
+
+Another, perhaps less preferrable, way could be that the classifiers based on the rejection option are only compared with one another. For instance, in the previous example problem, one could think of turning the NCC also into a classifier based on the rejection option: it would be sufficient to  require it (in addition to its usual way of operating) to issue a vacuous classification whenever the maximum \emph{lower} posterior probability over the classes does not exceed $t$.
+
+Issues like the ones described could in fact have affected the comparison between NBC and NDC in the previous section: for instance, that NDC exhibits a remarked improvement in the passage from $u_{65}$ to $u_{80}$, could be an indication that some `threshold' issue is at work there. As discussed above, a way to make a safer comparison between NCC and NDC, could be to enable NCC to group sets of classes based not only on its usual way of operating, but also according to the fact that the lower probability of a group of classes is high enough. Alternatively, this could be regarded as an extension of NDC to imprecision.
+
+\section{Conclusions}\label{sec:conc}
+In this paper, we have tackled what we regard to be a very important, and conceptually involved, open problem: the empirical comparison of classifiers that issue set-valued (or indeterminate) predictions. We have proposed a new metric to this end, which has been derived in a principled way from a number of assumptions. 
+
+Our metric has shown itself to be based of two main, and opposing, components: the discounted accuracy, which represents a kind of objective performance of a classifier; and its variance, which represents the unreliability of the classifier, and whose contribution to the overall measure has to be weighted through subjective considerations of risk aversion.
+
+We have given insights on the proposed metric, which we have called utility-discounted accuracy, and have used it to make extensive empirical comparisons of credal, as well as precise, classifiers. These tests, available in this form for the first time, show that the metric can easily be used in practice to finely compare classifiers, and to gain insights in their behaviour. 
+
+It would be important in the future to address the problem of evaluation of indeterminate predictors more in general. In fact, imprecise probability theories appear to have given so far very limited attention to the evaluation of indeterminate predictors. This is unfortunate, because indeterminacy is a fundamental characteristic of imprecise probability, and one that offers a privileged way to enhance reliability. Moreover, for any theory that claims itself to be statistical, it seems inescapable that a model's performance is measured---also---on data.
+
+On the other hand, the extension of the results in this paper to more general settings might be challenging. A major issue concerns cost-sensitive classification, that is, classification problems where the reward matrix is different from $\I$. The crucial point is that using $\I$ leads to zero reward whatever wrong classification is made. When we allow for different rewards for different incorrect predictions, we can no longer follow the argument that in Theorem~\ref{thm:1} led us to derive discounted accuracy: in other words, it does not seem easy to obtain an objective measure of performance under rewards more general than $0$ and $1$. Since this is a key passage in the costruction of a utility-based metric, it could be difficult to define a metric in such a generalized setup. This problem affects classification, but it affects even more set-valued predictions of a continuous quantity, as it happens in regression, because 0-1 rewards are just too restrictive in that case. This says once more that such a generalization is really needed. Can it be achieved? Some recent work by Seidenfeld, Schervish and Kadane \cite{seidenfeld2011a} seems to indicate that there may be some fundamental limitation to evaluate indeterminate predictors in general. However, such a work is based on the concept of scoring rule, and this might leave the door open to alternative approaches. It is anyway a question that deserves careful consideration.
+
+Finally, we would like to recall that the work in this paper has shown clear connections between the evaluation of credal classifiers and finance. This seems related to some recent work that connects utility considerations with machine learning \cite{friedman2011}. Deepening these connections might be fruitful in future research.
+
+\section*{Acknowledgements}
+The research in this paper has been partially supported by the Swiss NSF grants nos.~200020\_134759~/~1, 200020\_137680~/~1, 200020-132252, by the Hasler foundation grant n.~10030 and by the project Computational Life Sciences (CLS) program phase II (Ticino in Rete), canton Ticino, Switzerland.
+
+\bibliographystyle{plain}
+\bibliography{biblio}
+
+%\pagebreak
+\appendix 
+\section{Detailed numerical comparisons}\label{sec:app}
+In this section we report the comparison of classifiers detailed data set by data set.
+
+\begin{table}
+  \centering\small
+  %%% produced with
+  % paste -d " " names.txt ncc.det-nofs.txt lncc.det-nofs.txt cma.det-nofs.txt cdt.det-nofs.txt | awk 'BEGIN{ print "\\begin{tabular}{lrrrr}\\toprule\nDataset & NCC & LNCC & CMA & CDT \\\\ \\midrule" } { printf("%s & %.2f & %.2f & %.2f & %.2f \\\\ \n", $1,100.0*$2,100.0*$3,100.0*$4,100.0*$5)  } END{ print " \\bottomrule\n \\end{tabular}" }' > ../determinacy-no-fs.tex
+  \input{determinacy-no-fs}
+  \caption{Determinacy (\%) of credal classifiers. Boldface indicates highest determinacy on a dataset.}
+  \label{tab:detnofs}
+\end{table}
+
+\begin{table}
+  \centering\small
+  %%% produced with 'credalClassifiersExperiment/printTable.sh dacc-nofs > daccuracy-no-fs.tex'
+  \input{daccuracy-no-fs}
+  \caption{Expected utility (\%) of credal classifiers under $u_{50}$. Boldface indicates best performance on a dataset.}
+  \label{tab:daccnofs}
+\end{table}
+
+\begin{table}
+  \centering\small
+  %%% produced with 'credalClassifiersExperiment/printTable.sh u65-nofs > utility65-no-fs.tex'
+  \input{utility65-no-fs}
+  \caption{Expected utility (\%) of credal classifiers under $u_{65}$. Boldface indicates best performance on a dataset.}
+  \label{tab:u65nofs}
+\end{table}
+
+\begin{table}
+  \centering\small
+ \input{utility80-no-fs}
+  \caption{Expected utility (\%) of credal classifiers under $u_{80}$. Boldface indicates best performance on a dataset.}
+  \label{tab:u80nofs}
+\end{table}
+
+% head -66 daccuracy.txt | tail -55 | cut -c 34-39 > ncc.dacc.txt; head -66 utility65.txt | tail -55 | cut -c 34-39 > ncc.u65.txt; head -66 utility80.txt | tail -55 | cut -c 34-39 > ncc.u80.txt; head -66 determinacy.txt | tail -55 | cut -c 34-39 > ncc.det.txt
+% head -66 daccuracy.txt | tail -55 | cut -c 45-50 > lncc.dacc.txt; head -66 utility65.txt | tail -55 | cut -c 45-50 > lncc.u65.txt; head -66 utility80.txt | tail -55 | cut -c 45-50 > lncc.u80.txt; head -66 determinacy.txt | tail -55 | cut -c 45-50 > lncc.det.txt;
+% head -66 daccuracy.txt | tail -55 | cut -c 56-61 > cma.dacc.txt; head -66 utility65.txt | tail -55 | cut -c 56-61 > cma.u65.txt; head -66 utility80.txt | tail -55 | cut -c 56-61 > cma.u80.txt; head -66 determinacy.txt | tail -55 | cut -c 56-61 > cma.det.txt
+% head -66 daccuracy.txt | tail -55 | cut -c 67-72 > cdt.dacc.txt; head -66 utility65.txt | tail -55 | cut -c 67-72 > cdt.u65.txt; head -66 utility80.txt | tail -55 | cut -c 67-72 > cdt.u80.txt; head -66 determinacy.txt | tail -55 | cut -c 67-72 > cdt.det.txt
+\begin{table}
+  \centering\small
+  \input{determinacy-with-fs}
+  \caption{Determinacy (in \%) of credal classifiers after feature selection. Boldface indicates highest determinacy on a dataset.}
+  \label{tab:det}
+\end{table}
+
+\begin{table}
+  \centering\small
+  \input{daccuracy-with-fs}
+\caption{Expected utility (in \%) of credal classifiers under $u_{50}$ after feature selection. Boldface indicates best performance on a dataset.}
+\label{tab:u50}
+\end{table}
+
+\begin{table}
+ \centering\small
+  \input{utility65-with-fs}  
+\caption{Expected utility (in \%) of credal classifiers under$u_{65}$ after feature selection. Boldface indicates best performance on a dataset.}
+\label{tab:u65}
+\end{table}
+
+\begin{table}
+  \centering\small
+  \input{utility80-with-fs}
+  \caption{Expected utility (in \%) of credal classifiers under $u_{80}$ after feature selection. Boldface indicates best performance on a dataset.}
+\label{tab:u80}
+\end{table}
+
+\end{document}

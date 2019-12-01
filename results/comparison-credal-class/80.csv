@@ -1,0 +1,62 @@
+audiology-ReplaceMissingV,0.30,0.80,v,0.75,v
+anneal-weka.filters.unsup,0.80,0.99,v,0.98,v
+wisconsin-breast-cancer-w,0.97,0.95,*,0.97,' '
+cmc-weka.filters.unsuperv,0.53,0.54,' ',0.55,' '
+connect-4-weka.filters.un,0.72,0.77,v,0.72,' '
+contact-lenses-weka.filte,0.84,0.84,' ',0.87,' '
+credit-ReplaceMissingValu,0.87,0.85,' ',0.86,' '
+german_credit-weka.filter,0.76,0.72,*,0.78,' '
+pima_diabetes-weka.filter,0.78,0.78,' ',0.78,' '
+ecoli-weka.filters.unsupe,0.86,0.83,' ',0.84,' '
+eucalyptus-ReplaceMissing,0.60,0.65,v,0.60,' '
+Glass-weka.filters.unsupe,0.73,0.70,' ',0.74,' '
+grub-damage-weka.filters.,0.55,0.42,*,0.42,*
+haberman-weka.filters.uns,0.75,0.76,' ',0.72,' '
+hayes-roth-weka.filters.u,0.84,0.64,*,0.64,*
+cleveland-14-heart-diseas,0.79,0.77,' ',0.84,v
+hungarian-14-heart-diseas,0.84,0.79,*,0.84,' '
+hepatitisReplaceMissingVa,0.86,0.85,' ',0.87,' '
+hypothyroid-ReplaceMissin,0.96,0.99,v,0.99,v
+ionosphere-weka.filters.u,0.92,0.91,' ',0.92,' '
+iris-weka.filters.unsuper,0.95,0.94,' ',0.95,' '
+kr-vs-kp-weka.filters.uns,0.88,0.99,v,0.89,v
+labor.ReplaceMissingValue,0.96,0.86,*,0.95,' '
+letter-weka.filters.unsup,0.75,0.77,v,0.75,*
+liver-disorders-weka.filt,0.63,0.63,' ',0.64,' '
+lymphography-weka.filters,0.77,0.76,' ',0.84,v
+monks1-tr-te-Reorder-weka,0.75,0.82,v,0.75,' '
+monks-2_reorder-weka.filt,0.63,0.68,v,0.66,v
+monks3_Reorder-weka.filte,0.96,0.99,v,0.96,' '
+mushroom-weka.filters.uns,0.98,1.00,v,0.98,' '
+nursery-weka.filters.unsu,0.90,0.96,v,0.90,' '
+optdigits-weka.filters.un,0.93,0.77,*,0.92,*
+page-blocks-weka.filters.,0.94,0.96,v,0.94,' '
+pasture-production-weka.f,0.93,0.86,' ',0.91,' '
+pendigits-weka.filters.un,0.89,0.88,' ',0.89,' '
+postoperative-patient-dat,0.62,0.71,v,0.71,v
+primary-tumor.ReplaceMiss,0.28,0.40,v,0.36,v
+segment-weka.filters.unsu,0.93,0.95,v,0.93,' '
+solar-flare-C-weka.filter,0.85,0.90,v,0.89,v
+solar-flare-m-weka.filter,0.81,0.89,v,0.90,v
+solar-flare-X-weka.filter,0.94,0.98,v,0.97,v
+sonar-weka.filters.unsupe,0.86,0.78,*,0.85,' '
+soybean-ReplaceMissingVal,0.93,0.91,' ',0.92,' '
+spambase-weka.filters.uns,0.90,0.92,v,0.90,' '
+spect-reordered-weka.filt,0.81,0.81,' ',0.82,' '
+splice-weka.filters.unsup,0.96,0.93,*,0.96,v
+squash-stored-ReplaceMiss,0.74,0.74,' ',0.67,' '
+squash-unstored-ReplaceMi,0.83,0.93,v,0.86,' '
+tae-weka.filters.unsuperv,0.55,0.47,*,0.55,' '
+vowel-weka.filters.unsupe,0.70,0.77,v,0.70,' '
+waveform-weka.filters.uns,0.81,0.76,*,0.81,*
+white-clover-weka.filters,0.67,0.71,' ',0.74,' '
+wine-Reorder-weka.filters,0.99,0.95,*,0.99,' '
+yeast-weka.filters.unsupe,0.60,0.60,' ',0.59,*
+zoo-weka.filters.unsuperv,0.93,0.95,' ',0.97,' '
+'[v/ /*]','','',[22/21/12],'',[13/36/6]
+
+
+Key,
+[1],'meta.E_FilteredClassifier \'-F \\\"supervised.attribute.Discretize -R first-last\\\" -W credalClassifiers.NaiveCredal -- -S 1.0 -O ./results/\' 2.8897306169399235E18'
+[2],'meta.E_FilteredClassifier \'-F \\\"supervised.attribute.Discretize -R first-last\\\" -W credalClassifiers.CredalDecisionTree -- -S 1.0 -O ./results/\' 2.8897306169399235E18'
+[3],'meta.E_FilteredClassifier \'-F \\\"supervised.attribute.Discretize -R first-last\\\" -W credalClassifiers.CredalAveraging -- -S 1.0 -O ./results/\' 2.8897306169399235E18'

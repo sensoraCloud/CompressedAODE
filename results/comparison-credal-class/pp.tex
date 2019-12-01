@@ -1,0 +1,18 @@
+\documentclass{amsart}
+\usepackage{tikz,pgfplots}
+\usepackage{pgfplots}
+\usetikzlibrary{plotmarks}
+\pgfplotsset{
+tick label style={font=\small},
+label style={font=\small},
+legend style={font=\footnotesize}
+}
+\tikzset{every mark/.append style={scale=0.7}}
+\begin{document}
+\begin{figure}
+\begin{tikzpicture}
+\input{comparison.tkz}
+\end{tikzpicture}
+\label{aaa}
+\end{figure}
+\end{document}
